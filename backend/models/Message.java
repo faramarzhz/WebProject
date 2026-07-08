@@ -1,5 +1,8 @@
 package models;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
 public class Message {
     private String messageId;
     private String senderId;
@@ -7,8 +10,12 @@ public class Message {
     private long timestamp;// زمان ارسال پیام
     private boolean isEdited;
     private boolean isDeleted;
-    private String mediaPath;// برای فاز 2
+    private String mediaPath;
     private boolean isReported;
+
+    // ─── فیلدهای جدید فاز ۲ ─────────────────────────────
+    private ArrayList<MessageEdit> editHistory; // تاریخچه‌ی نسخه‌های قبلی پیام (قبل از هر ویرایش یا حذف)
+    private LinkedHashMap<String, String> reactions; // نگاشت userId به ایموجی ری‌اکشن؛ LinkedHashMap برای حفظ ترتیب ثبت
 
     public Message(String messageId, String senderId, String content, String mediaPath) {
         this.messageId = messageId;
@@ -19,6 +26,8 @@ public class Message {
         isDeleted = false;
         this.mediaPath = mediaPath;
         isReported = false;
+        editHistory = new ArrayList<>();
+        reactions = new LinkedHashMap<>();
     }
 
     // Getters and Setters
@@ -72,5 +81,31 @@ public class Message {
 
     public void setReported(boolean isReported) {
         this.isReported = isReported;
+    }
+
+    // ─── متدهای جدید فاز ۲: تاریخچه ویرایش/حذف ─────────────────────
+    // ثبت نسخه‌ی فعلی محتوا در تاریخچه، پیش از اعمال تغییر جدید
+    // این متد باید همیشه "قبل از" فراخوانی setContent صدا زده شود
+    public void recordEditBeforeChange() {
+        editHistory.add(new MessageEdit(this.content));
+    }
+
+    public ArrayList<MessageEdit> getEditHistory() {
+        return editHistory;
+    }
+
+    // ─── متدهای جدید فاز ۲: ری‌اکشن ─────────────────────
+    // اضافه یا جایگزین کردن ری‌اکشن یک کاربر (هر کاربر فقط یک ری‌اکشن فعال بر هر پیام دارد)
+    public void addReaction(String userId, String emoji) {
+        reactions.put(userId, emoji);
+    } 
+
+    // حذف ری‌اکشن یک کاربر خاص از روی پیام
+    public void removeReaction(String userId) {
+        reactions.remove(userId);
+    }
+
+    public LinkedHashMap<String, String> getReactions() {
+        return reactions;
     }
 }

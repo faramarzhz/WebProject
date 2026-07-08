@@ -46,7 +46,7 @@ public class ClientHandler implements Runnable {
                     try {
                         contentLength = Integer.parseInt(headerLine.split(":", 2)[1].trim());
                     } catch (NumberFormatException ignored) {
-                    }
+                    }   
                 }
             }
 
