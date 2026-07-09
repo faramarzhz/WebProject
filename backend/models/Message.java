@@ -13,9 +13,8 @@ public class Message {
     private String mediaPath;
     private boolean isReported;
 
-    // ─── فیلدهای جدید فاز ۲ ─────────────────────────────
     private ArrayList<MessageEdit> editHistory; // تاریخچه‌ی نسخه‌های قبلی پیام (قبل از هر ویرایش یا حذف)
-    private LinkedHashMap<String, String> reactions; // نگاشت userId به ایموجی ری‌اکشن؛ LinkedHashMap برای حفظ ترتیب ثبت
+    private LinkedHashMap<String, String> reactions; // نگاشت userId به ایموجی ری‌اکشن LinkedHashMap برای حفظ ترتیب ثبت
 
     public Message(String messageId, String senderId, String content, String mediaPath) {
         this.messageId = messageId;
@@ -83,9 +82,6 @@ public class Message {
         this.isReported = isReported;
     }
 
-    // ─── متدهای جدید فاز ۲: تاریخچه ویرایش/حذف ─────────────────────
-    // ثبت نسخه‌ی فعلی محتوا در تاریخچه، پیش از اعمال تغییر جدید
-    // این متد باید همیشه "قبل از" فراخوانی setContent صدا زده شود
     public void recordEditBeforeChange() {
         editHistory.add(new MessageEdit(this.content));
     }
@@ -94,13 +90,10 @@ public class Message {
         return editHistory;
     }
 
-    // ─── متدهای جدید فاز ۲: ری‌اکشن ─────────────────────
-    // اضافه یا جایگزین کردن ری‌اکشن یک کاربر (هر کاربر فقط یک ری‌اکشن فعال بر هر پیام دارد)
     public void addReaction(String userId, String emoji) {
         reactions.put(userId, emoji);
     } 
 
-    // حذف ری‌اکشن یک کاربر خاص از روی پیام
     public void removeReaction(String userId) {
         reactions.remove(userId);
     }

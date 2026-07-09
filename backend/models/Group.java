@@ -10,12 +10,18 @@ public class Group {
     private HashSet<String> members; // هش‌ست برای سرعت بالا و تکراری نبودن
     private ArrayList<Message> messages;// ارای لیست بخاطر حفظ کردن ترتیب
 
-    public Group(String groupId, String groupName) {
+    private String creatorId; 
+    private HashSet<String> adminIds;
+
+    public Group(String groupId, String groupName, String creatorId) {
         this.groupId = groupId;
         this.groupName = groupName;
         profilePicturePath = "";
         members = new HashSet<>();
         messages = new ArrayList<>();
+        this.creatorId = creatorId;
+        adminIds = new HashSet<>();
+        adminIds.add(creatorId);
     }
 
     // Getters and Setters
@@ -45,5 +51,27 @@ public class Group {
 
     public ArrayList<Message> getMessages() {
         return messages;
+    }
+
+    public String getCreatorId() {
+        return creatorId;
+    }
+
+    public HashSet<String> getAdminIds() {
+        return adminIds;
+    }
+
+    public boolean isAdmin(String userId) {
+        return adminIds.contains(userId);
+    }
+
+    public void addAdmin(String userId) {
+        adminIds.add(userId);
+    }
+
+    public void removeAdmin(String userId) {
+        if (!userId.equals(creatorId)) {
+            adminIds.remove(userId);
+        }
     }
 }
