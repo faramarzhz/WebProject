@@ -16,6 +16,12 @@ public class RequestRouter {
     private static final Pattern MESSAGES_PATTERN = Pattern.compile("^/api/chat/([^/]+)/messages$");
     private static final Pattern SEND_PATTERN = Pattern.compile("^/api/chat/([^/]+)/send$");
     private static final Pattern REPORT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/report$");
+    private static final Pattern MESSAGE_EDIT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/edit$");
+    private static final Pattern MESSAGE_DELETE_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/delete$");
+    private static final Pattern MESSAGE_REACT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/react$");
+    private static final Pattern MESSAGE_UNREACT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/unreact$");
+    private static final Pattern GROUP_SEND_PATTERN = Pattern.compile("^/api/group/([^/]+)/send$");
+    private static final Pattern GROUP_MESSAGES_PATTERN = Pattern.compile("^/api/group/([^/]+)/messages$");
 
     public RequestRouter(Server server) {
         this.server = server;
@@ -68,7 +74,7 @@ public class RequestRouter {
             boolean success = server.getAuthService().register(username, password, userId);
             if (success) {
                 return ResponseBuilder.created("{\"message\":\"Registered successfully\",\"userId\":\"" +
-                        ResponseBuilder.escapeJson(userId) + "\"}");
+                        userId + "\"}");
             }
             return ResponseBuilder.error(400,
                     "Registration failed. Password must have uppercase, lowercase, digit and special char (!@#$%^&*).");
@@ -89,8 +95,8 @@ public class RequestRouter {
             User user = server.getAuthService().login(userId, password);
             if (user != null) {
                 return ResponseBuilder.ok("{\"message\":\"Login successful\",\"userId\":\"" +
-                        ResponseBuilder.escapeJson(user.getUserId()) + "\",\"username\":\"" +
-                        ResponseBuilder.escapeJson(user.getUsername()) + "\"}");
+                        user.getUserId() + "\",\"username\":\"" +
+                        user.getUsername() + "\"}");
             }
             return ResponseBuilder.error(401, "Invalid User ID or password.");
         }
@@ -120,7 +126,7 @@ public class RequestRouter {
             if (userId.isEmpty())
                 return ResponseBuilder.error(400, "Missing userId.");
             Chat saved = server.getChatService().getOrCreateSavedMessages(userId);
-            return ResponseBuilder.ok("{\"chatId\":\"" + ResponseBuilder.escapeJson(saved.getChatId()) + "\"}");
+            return ResponseBuilder.ok("{\"chatId\":\"" + saved.getChatId() + "\"}");
         }
 
         // وب سرویس ایجاد چت خصوصی جدید بین دو یوزر
@@ -138,13 +144,13 @@ public class RequestRouter {
             Chat existing = server.getChatService().findPrivateChat(userId1, userId2);
             if (existing != null) {
                 return ResponseBuilder.ok("{\"chatId\":\"" +
-                        ResponseBuilder.escapeJson(existing.getChatId()) + "\",\"existed\":true}");
+                        existing.getChatId() + "\",\"existed\":true}");
             }
             String chatId = IdGenerator.generateId();
             Chat chat = server.getChatService().createChat(chatId, userId1, userId2);
             chat.setType("private");
             return ResponseBuilder.created("{\"chatId\":\"" +
-                    ResponseBuilder.escapeJson(chat.getChatId()) + "\",\"existed\":false}");
+                    chat.getChatId() + "\",\"existed\":false}");
         }
 
         // وب سرویس دریافت تاریخچه کامل پیام‌های یک چت
@@ -185,13 +191,28 @@ public class RequestRouter {
                 if (chat == null)
                     return ResponseBuilder.error(404, "Chat not found.");
 
+                // چک کردن اینکه آیا گیرنده پیام، فرستنده را بلاک کرده است یا نه
+                String otherUserId = null;
+                for (String p : chat.getParticipants()) {
+                    if (!p.equals(sender)) {
+                        otherUserId = p;
+                        break;
+                    }
+                }
+                if (otherUserId != null) {
+                    User otherUser = server.getUserService().getUserById(otherUserId);
+                    if (otherUser != null && otherUser.hasBlocked(sender)) {
+                        return ResponseBuilder.error(403, "You have been blocked by this user.");
+                    }
+                }
+
                 String msgId = IdGenerator.generateId();
                 Message msg = server.getMessageService().createMessage(msgId, sender, content, null);
                 if (msg == null) {
                     return ResponseBuilder.error(429, "Spam detected. Max 5 messages per second.");
                 }
                 server.getMessageService().addMessageToChat(chat, msg);
-                return ResponseBuilder.ok("{\"messageId\":\"" + ResponseBuilder.escapeJson(msgId) + "\"}");
+                return ResponseBuilder.ok("{\"messageId\":\"" + msgId + "\"}");
             }
         }
 
@@ -220,6 +241,118 @@ public class RequestRouter {
             }
         }
 
+        // وب سرویس ویرایش پیام
+        if (method.equals("POST")) {
+            Matcher matcher = MESSAGE_EDIT_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String chatId = matcher.group(1);
+                String msgId = extractField(body, "messageId");
+                String newContent = extractField(body, "newContent");
+                String senderId = extractField(body, "senderId");
+
+                if (msgId.isEmpty() || newContent.isEmpty() || senderId.isEmpty()) {
+                    return ResponseBuilder.error(400, "Missing messageId, newContent or senderId.");
+                }
+
+                Chat chat = server.getChatService().getChatById(chatId);
+                if (chat == null)
+                    return ResponseBuilder.error(404, "Chat not found.");
+
+                for (Message m : chat.getMessages()) {
+                    if (m.getMessageId().equals(msgId)) {
+                        if (!m.getSenderId().equals(senderId)) {
+                            return ResponseBuilder.error(403, "You can only edit your own messages.");
+                        }
+                        server.getMessageService().editMessage(m, newContent);
+                        return ResponseBuilder.ok("{\"message\":\"Message edited successfully.\"}");
+                    }
+                }
+                return ResponseBuilder.error(404, "Message not found.");
+            }
+        }
+
+        // وب سرویس حذف پیام
+        if (method.equals("POST")) {
+            Matcher matcher = MESSAGE_DELETE_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String chatId = matcher.group(1);
+                String msgId = extractField(body, "messageId");
+                String senderId = extractField(body, "senderId");
+
+                if (msgId.isEmpty() || senderId.isEmpty()) {
+                    return ResponseBuilder.error(400, "Missing messageId or senderId.");
+                }
+
+                Chat chat = server.getChatService().getChatById(chatId);
+                if (chat == null)
+                    return ResponseBuilder.error(404, "Chat not found.");
+
+                for (Message m : chat.getMessages()) {
+                    if (m.getMessageId().equals(msgId)) {
+                        if (!m.getSenderId().equals(senderId)) {
+                            return ResponseBuilder.error(403, "You can only delete your own messages.");
+                        }
+                        server.getMessageService().deleteMessage(m);
+                        return ResponseBuilder.ok("{\"message\":\"Message deleted successfully.\"}");
+                    }
+                }
+                return ResponseBuilder.error(404, "Message not found.");
+            }
+        }
+
+        // وب سرویس ری‌اکشن به پیام
+        if (method.equals("POST")) {
+            Matcher matcher = MESSAGE_REACT_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String chatId = matcher.group(1);
+                String msgId = extractField(body, "messageId");
+                String userId = extractField(body, "userId");
+                String emoji = extractField(body, "emoji");
+
+                if (msgId.isEmpty() || userId.isEmpty() || emoji.isEmpty()) {
+                    return ResponseBuilder.error(400, "Missing messageId, userId or emoji.");
+                }
+
+                Chat chat = server.getChatService().getChatById(chatId);
+                if (chat == null)
+                    return ResponseBuilder.error(404, "Chat not found.");
+
+                for (Message m : chat.getMessages()) {
+                    if (m.getMessageId().equals(msgId)) {
+                        server.getMessageService().reactToMessage(m, userId, emoji);
+                        return ResponseBuilder.ok("{\"message\":\"Reaction added.\"}");
+                    }
+                }
+                return ResponseBuilder.error(404, "Message not found.");
+            }
+        }
+
+        // وب سرویس حذف ری‌اکشن از پیام
+        if (method.equals("POST")) {
+            Matcher matcher = MESSAGE_UNREACT_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String chatId = matcher.group(1);
+                String msgId = extractField(body, "messageId");
+                String userId = extractField(body, "userId");
+
+                if (msgId.isEmpty() || userId.isEmpty()) {
+                    return ResponseBuilder.error(400, "Missing messageId or userId.");
+                }
+
+                Chat chat = server.getChatService().getChatById(chatId);
+                if (chat == null)
+                    return ResponseBuilder.error(404, "Chat not found.");
+
+                for (Message m : chat.getMessages()) {
+                    if (m.getMessageId().equals(msgId)) {
+                        server.getMessageService().removeReaction(m, userId);
+                        return ResponseBuilder.ok("{\"message\":\"Reaction removed.\"}");
+                    }
+                }
+                return ResponseBuilder.error(404, "Message not found.");
+            }
+        }
+
         // وب سرویس حذف کامل اکانت یوزر
         if (method.equals("POST") && path.equals("/api/user/delete")) {
             String userId = extractField(body, "userId");
@@ -232,6 +365,29 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Account deleted successfully.\"}");
         }
 
+        // وب سرویس بلاک کردن کاربر
+        if (method.equals("POST") && path.equals("/api/user/block")) {
+            String userId = extractField(body, "userId");
+            String targetId = extractField(body, "targetId");
+            if (userId.isEmpty() || targetId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or targetId.");
+            if (!server.getUserService().userExists(targetId)) {
+                return ResponseBuilder.error(404, "Target user not found.");
+            }
+            server.getUserService().blockUser(userId, targetId);
+            return ResponseBuilder.ok("{\"message\":\"User blocked.\"}");
+        }
+
+        // وب سرویس آنبلاک کردن کاربر
+        if (method.equals("POST") && path.equals("/api/user/unblock")) {
+            String userId = extractField(body, "userId");
+            String targetId = extractField(body, "targetId");
+            if (userId.isEmpty() || targetId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or targetId.");
+            server.getUserService().unblockUser(userId, targetId);
+            return ResponseBuilder.ok("{\"message\":\"User unblocked.\"}");
+        }
+
         // وب سرویس افزودن مخاطب جدید
         if (method.equals("POST") && path.equals("/api/contact/add")) {
             String userId = extractField(body, "userId");
@@ -242,6 +398,76 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Contact added.\"}");
         }
 
+        // وب سرویس حذف مخاطب
+        if (method.equals("POST") && path.equals("/api/contact/remove")) {
+            String userId = extractField(body, "userId");
+            String contactId = extractField(body, "contactId");
+            if (userId.isEmpty() || contactId.isEmpty())
+                return ResponseBuilder.error(400, "Missing parameters.");
+            server.getUserService().removeContact(userId, contactId);
+            return ResponseBuilder.ok("{\"message\":\"Contact removed.\"}");
+        }
+
+        // وب سرویس پین کردن چت
+        if (method.equals("POST") && path.equals("/api/chat/pin")) {
+            String userId = extractField(body, "userId");
+            String chatId = extractField(body, "chatId");
+            if (userId.isEmpty() || chatId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or chatId.");
+            server.getUserService().pinChat(userId, chatId);
+            return ResponseBuilder.ok("{\"message\":\"Chat pinned.\"}");
+        }
+
+        // وب سرویس آنپین کردن چت
+        if (method.equals("POST") && path.equals("/api/chat/unpin")) {
+            String userId = extractField(body, "userId");
+            String chatId = extractField(body, "chatId");
+            if (userId.isEmpty() || chatId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or chatId.");
+            server.getUserService().unpinChat(userId, chatId);
+            return ResponseBuilder.ok("{\"message\":\"Chat unpinned.\"}");
+        }
+
+        // وب سرویس آرشیو کردن چت
+        if (method.equals("POST") && path.equals("/api/chat/archive")) {
+            String userId = extractField(body, "userId");
+            String chatId = extractField(body, "chatId");
+            if (userId.isEmpty() || chatId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or chatId.");
+            server.getUserService().archiveChat(userId, chatId);
+            return ResponseBuilder.ok("{\"message\":\"Chat archived.\"}");
+        }
+
+        // وب سرویس خارج کردن چت از آرشیو
+        if (method.equals("POST") && path.equals("/api/chat/unarchive")) {
+            String userId = extractField(body, "userId");
+            String chatId = extractField(body, "chatId");
+            if (userId.isEmpty() || chatId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or chatId.");
+            server.getUserService().unarchiveChat(userId, chatId);
+            return ResponseBuilder.ok("{\"message\":\"Chat unarchived.\"}");
+        }
+
+        // وب سرویس میوت کردن چت
+        if (method.equals("POST") && path.equals("/api/chat/mute")) {
+            String userId = extractField(body, "userId");
+            String chatId = extractField(body, "chatId");
+            if (userId.isEmpty() || chatId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or chatId.");
+            server.getUserService().muteChat(userId, chatId);
+            return ResponseBuilder.ok("{\"message\":\"Chat muted.\"}");
+        }
+
+        // وب سرویس آنمیوت کردن چت
+        if (method.equals("POST") && path.equals("/api/chat/unmute")) {
+            String userId = extractField(body, "userId");
+            String chatId = extractField(body, "chatId");
+            if (userId.isEmpty() || chatId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId or chatId.");
+            server.getUserService().unmuteChat(userId, chatId);
+            return ResponseBuilder.ok("{\"message\":\"Chat unmuted.\"}");
+        }
+
         // وب سرویس ساخت گروه چت جدید
         if (method.equals("POST") && path.equals("/api/group/create")) {
             String groupName = extractField(body, "groupName");
@@ -250,9 +476,137 @@ public class RequestRouter {
                 return ResponseBuilder.error(400, "Missing parameters.");
             String groupId = IdGenerator.generateId();
             Group g = server.getGroupService().createGroup(groupId, groupName, creatorId);
-            return ResponseBuilder.created("{\"groupId\":\"" + ResponseBuilder.escapeJson(g.getGroupId())
-                    + "\",\"groupName\":\"" + ResponseBuilder.escapeJson(g.getGroupName()) + "\"}");
+            return ResponseBuilder.created("{\"groupId\":\"" + g.getGroupId()
+                    + "\",\"groupName\":\"" + g.getGroupName() + "\"}");
         }
+
+        // وب سرویس گرفتن لیست گروه‌های یک کاربر
+        if (method.equals("GET") && path.equals("/api/groups")) {
+            String userId = getQueryParam(queryString, "userId");
+            if (userId.isEmpty())
+                return ResponseBuilder.error(400, "Missing userId.");
+            ArrayList<Group> groups = server.getGroupService().getGroupsForUser(userId);
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < groups.size(); i++) {
+                if (i > 0)
+                    sb.append(",");
+                sb.append(groupToJson(groups.get(i)));
+            }
+            sb.append("]");
+            return ResponseBuilder.ok(sb.toString());
+        }
+
+        // وب سرویس ارسال پیام به گروه
+        if (method.equals("POST")) {
+            Matcher matcher = GROUP_SEND_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String groupId = matcher.group(1);
+                String sender = extractField(body, "senderId");
+                String content = extractField(body, "content");
+
+                if (sender.isEmpty() || content.isEmpty()) {
+                    return ResponseBuilder.error(400, "Missing senderId or content.");
+                }
+                if (content.length() > 1000) {
+                    return ResponseBuilder.error(400, "Message too long (max 1000 chars).");
+                }
+                Group group = server.getGroupService().getGroupById(groupId);
+                if (group == null)
+                    return ResponseBuilder.error(404, "Group not found.");
+                if (!group.getMembers().contains(sender)) {
+                    return ResponseBuilder.error(403, "You are not a member of this group.");
+                }
+
+                String msgId = IdGenerator.generateId();
+                Message msg = server.getMessageService().createMessage(msgId, sender, content, null);
+                if (msg == null) {
+                    return ResponseBuilder.error(429, "Spam detected. Max 5 messages per second.");
+                }
+                server.getMessageService().addMessageToGroup(group, msg);
+                return ResponseBuilder.ok("{\"messageId\":\"" + msgId + "\"}");
+            }
+        }
+
+        // وب سرویس دریافت پیام‌های گروه
+        if (method.equals("GET")) {
+            Matcher matcher = GROUP_MESSAGES_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String groupId = matcher.group(1);
+                Group group = server.getGroupService().getGroupById(groupId);
+                if (group == null)
+                    return ResponseBuilder.error(404, "Group not found.");
+                ArrayList<Message> msgs = group.getMessages();
+                StringBuilder sb = new StringBuilder("[");
+                for (int i = 0; i < msgs.size(); i++) {
+                    if (i > 0)
+                        sb.append(",");
+                    sb.append(messageToJson(msgs.get(i)));
+                }
+                sb.append("]");
+                return ResponseBuilder.ok(sb.toString());
+            }
+        }
+
+        // وب سرویس افزودن عضو به گروه
+        if (method.equals("POST") && path.equals("/api/group/addmember")) {
+            String groupId = extractField(body, "groupId");
+            String requesterId = extractField(body, "requesterId");
+            String userId = extractField(body, "userId");
+            if (groupId.isEmpty() || requesterId.isEmpty() || userId.isEmpty())
+                return ResponseBuilder.error(400, "Missing parameters.");
+
+            Group group = server.getGroupService().getGroupById(groupId);
+            if (group == null)
+                return ResponseBuilder.error(404, "Group not found.");
+            if (!group.isAdmin(requesterId)) {
+                return ResponseBuilder.error(403, "Only group admins can add members.");
+            }
+            if (!server.getUserService().userExists(userId)) {
+                return ResponseBuilder.error(404, "User not found.");
+            }
+            server.getGroupService().addMember(groupId, userId);
+            return ResponseBuilder.ok("{\"message\":\"Member added.\"}");
+        }
+
+        // وب سرویس حذف عضو از گروه (یا ترک گروه توسط خود عضو)
+        if (method.equals("POST") && path.equals("/api/group/removemember")) {
+            String groupId = extractField(body, "groupId");
+            String requesterId = extractField(body, "requesterId");
+            String userId = extractField(body, "userId");
+            if (groupId.isEmpty() || requesterId.isEmpty() || userId.isEmpty())
+                return ResponseBuilder.error(400, "Missing parameters.");
+
+            Group group = server.getGroupService().getGroupById(groupId);
+            if (group == null)
+                return ResponseBuilder.error(404, "Group not found.");
+            // یا خود شخص در حال ترک گروه است، یا ادمین دارد او را حذف می‌کند
+            boolean isSelfLeaving = requesterId.equals(userId);
+            if (!isSelfLeaving && !group.isAdmin(requesterId)) {
+                return ResponseBuilder.error(403, "Only group admins can remove other members.");
+            }
+            server.getGroupService().removeMember(groupId, userId);
+            return ResponseBuilder.ok("{\"message\":\"Member removed.\"}");
+        }
+
+        // وب سرویس ویرایش اطلاعات گروه
+        if (method.equals("POST") && path.equals("/api/group/update")) {
+            String groupId = extractField(body, "groupId");
+            String requesterId = extractField(body, "requesterId");
+            String newGroupName = extractField(body, "groupName");
+            String newPic = extractField(body, "profilePicturePath");
+            if (groupId.isEmpty() || requesterId.isEmpty())
+                return ResponseBuilder.error(400, "Missing groupId or requesterId.");
+
+            Group group = server.getGroupService().getGroupById(groupId);
+            if (group == null)
+                return ResponseBuilder.error(404, "Group not found.");
+            if (!group.isAdmin(requesterId)) {
+                return ResponseBuilder.error(403, "Only group admins can update group info.");
+            }
+            server.getGroupService().updateGroupInfo(groupId, newGroupName, newPic);
+            return ResponseBuilder.ok("{\"message\":\"Group info updated.\"}");
+        }
+
         return ResponseBuilder.error(404, "Endpoint not found: " + method + " " + path);
     }
 
@@ -263,7 +617,7 @@ public class RequestRouter {
         if (!msgs.isEmpty())
             lastMsg = msgs.get(msgs.size() - 1);
 
-        String lastContent = lastMsg != null ? ResponseBuilder.escapeJson(lastMsg.getContent()) : "";
+        String lastContent = lastMsg != null ? lastMsg.getContent() : "";
         String lastTime = lastMsg != null ? String.valueOf(lastMsg.getTimestamp()) : "";
 
         int receivedMessages = 0;
@@ -273,9 +627,9 @@ public class RequestRouter {
         }
 
         StringBuilder sb = new StringBuilder("{");
-        sb.append("\"id\":\"").append(ResponseBuilder.escapeJson(chat.getChatId())).append("\",");
-        sb.append("\"type\":\"").append(ResponseBuilder.escapeJson(chat.getType())).append("\",");
-        sb.append("\"name\":\"").append(ResponseBuilder.escapeJson(chat.getName())).append("\",");
+        sb.append("\"id\":\"").append(chat.getChatId()).append("\",");
+        sb.append("\"type\":\"").append(chat.getType()).append("\",");
+        sb.append("\"name\":\"").append(chat.getName()).append("\",");
         sb.append("\"lastMessageContent\":\"").append(lastContent).append("\",");
         sb.append("\"lastMessageTime\":").append(lastTime.isEmpty() ? "null" : "\"" + lastTime + "\"").append(",");
         sb.append("\"totalMessages\":").append(receivedMessages).append(",");
@@ -284,7 +638,34 @@ public class RequestRouter {
         for (int i = 0; i < parts.size(); i++) {
             if (i > 0)
                 sb.append(",");
-            sb.append("\"").append(ResponseBuilder.escapeJson(parts.get(i))).append("\"");
+            sb.append("\"").append(parts.get(i)).append("\"");
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
+    // تبدیل فیلدهای شی گروه به فرمت متنی JSON
+    private String groupToJson(Group group) {
+        Message lastMsg = null;
+        ArrayList<Message> msgs = group.getMessages();
+        if (!msgs.isEmpty())
+            lastMsg = msgs.get(msgs.size() - 1);
+
+        String lastContent = lastMsg != null ? lastMsg.getContent() : "";
+        String lastTime = lastMsg != null ? String.valueOf(lastMsg.getTimestamp()) : "";
+
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"id\":\"").append(group.getGroupId()).append("\",");
+        sb.append("\"name\":\"").append(group.getGroupName()).append("\",");
+        sb.append("\"lastMessageContent\":\"").append(lastContent).append("\",");
+        sb.append("\"lastMessageTime\":").append(lastTime.isEmpty() ? "null" : "\"" + lastTime + "\"").append(",");
+        sb.append("\"memberIds\":[");
+        int i = 0;
+        for (String memberId : group.getMembers()) {
+            if (i > 0)
+                sb.append(",");
+            sb.append("\"").append(memberId).append("\"");
+            i++;
         }
         sb.append("]}");
         return sb.toString();
@@ -292,9 +673,9 @@ public class RequestRouter {
 
     // تبدیل فیلدهای شی پیام به فرمت متنی JSON
     private String messageToJson(Message msg) {
-        return "{" + "\"id\":\"" + ResponseBuilder.escapeJson(msg.getMessageId()) + "\"," + "\"senderId\":\""
-                + ResponseBuilder.escapeJson(msg.getSenderId()) + "\"," + "\"content\":\""
-                + ResponseBuilder.escapeJson(msg.getContent()) + "\"," + "\"time\":\"" + msg.getTimestamp() + "\","
+        return "{" + "\"id\":\"" + msg.getMessageId() + "\"," + "\"senderId\":\""
+                + msg.getSenderId() + "\"," + "\"content\":\""
+                + msg.getContent() + "\"," + "\"time\":\"" + msg.getTimestamp() + "\","
                 + "\"isEdited\":" + msg.isEdited() + "," + "\"isDeleted\":" + msg.isDeleted() + "," + "\"isReported\":"
                 + msg.isReported() + "}";
     }

@@ -198,16 +198,26 @@ public class AdminCLI {
         String gid = scanner.nextLine().trim();
         System.out.print("Group Name: ");
         String gname = scanner.nextLine().trim();
-        if (gid.isEmpty() || gname.isEmpty()) {
+        System.out.print("Creator User ID: ");
+        String creatorId = scanner.nextLine().trim();
+
+        if (gid.isEmpty() || gname.isEmpty() || creatorId.isEmpty()) {
             System.out.println("All fields are required.");
             return;
         }
         if (groups.containsKey(gid)) {
             System.out.println("Group ID already exists.");
-        } else {
-            groups.put(gid, new Group(gid, gname));
-            System.out.println("Group created: " + gid);
+            return;
         }
+        if (!server.getUsers().containsKey(creatorId)) {
+            System.out.println("Creator user '" + creatorId + "' does not exist.");
+            return;
+        }
+
+        Group newGroup = new Group(gid, gname, creatorId);
+        newGroup.getMembers().add(creatorId);
+        groups.put(gid, newGroup);
+        System.out.println("Group created: " + gid);
     }
 
     private void deleteGroup(String groupId) {
