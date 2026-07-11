@@ -298,7 +298,6 @@ public class AdminCLI {
         }
     }
 
-
     // Reports
     private void showReports() {
         HashMap<String, Chat> chats = server.getChats();
