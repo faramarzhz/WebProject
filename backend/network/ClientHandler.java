@@ -14,7 +14,7 @@ public class ClientHandler implements Runnable {
         this.server = server;
         router = new RequestRouter(server);
     }
-    // بدنه اصلی ترد خواندن درخواست HTTP و فرستادن پاسخ به کلاینت
+
     @Override
     public void run() {
         BufferedReader in = null;
@@ -38,7 +38,6 @@ public class ClientHandler implements Runnable {
                 path = fullPath.substring(0, qIdx);
                 queryString = fullPath.substring(qIdx + 1);
             }
-            // خواندن هدرهای HTTP برای پیدا کردن طول بدنه پیام
             int contentLength = 0;
             String headerLine;
             while ((headerLine = in.readLine()) != null && !headerLine.isEmpty()) {
@@ -46,7 +45,7 @@ public class ClientHandler implements Runnable {
                     try {
                         contentLength = Integer.parseInt(headerLine.split(":", 2)[1].trim());
                     } catch (NumberFormatException ignored) {
-                    }
+                    }   
                 }
             }
 
@@ -65,18 +64,11 @@ public class ClientHandler implements Runnable {
                 body = bodyBuilder.toString();
             }
 
-            String response;
-            if (method.equals("OPTIONS")) {
-                response = ResponseBuilder.buildOptionsResponse();
-            } else {
-                response = router.route(method, path, queryString, body); // هدایت به روتر
-            }
+            String response = router.route(method, path, queryString, body);
             out.write(response.getBytes(StandardCharsets.UTF_8));
             out.flush();
         } catch (IOException e) {
-            // ارتباط کلاینت قطع شده
         } finally {
-            // بستن امن تمام کانال‌های ورودی/خروجی و سوکت کلاینت
             try {
                 if (in != null)
                     in.close();

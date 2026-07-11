@@ -5,53 +5,45 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class GroupService {
-    private HashMap<String, Group> groups = new HashMap<>(); // ذخیره کل گروه‌های سرور با هش مپ برای دسترسی سریع با
-                                                             // groupId
+    private HashMap<String, Group> groups = new HashMap<>();
 
-    // متد ساخت گروه جدید و عضو کردن سازنده
     public Group createGroup(String groupId, String groupName, String creatorId) {
-        Group newGroup = new Group(groupId, groupName);
-        newGroup.getMembers().add(creatorId); // سازنده گروه به عنوان اولین عضو اضافه می‌شود
+        Group newGroup = new Group(groupId, groupName, creatorId);
+        newGroup.getMembers().add(creatorId);
         groups.put(groupId, newGroup);
         return newGroup;
     }
 
-    // اضافه کردن ممبر جدید به گروه
     public void addMember(String groupId, String userId) {
         Group group = groups.get(groupId);
         if (group != null)
             group.getMembers().add(userId);
     }
 
-    // حذف ممبر از گروه (لفت دادن یا ریمو شدن)
     public void removeMember(String groupId, String userId) {
         Group group = groups.get(groupId);
         if (group != null)
             group.getMembers().remove(userId);
     }
 
-    // آپدیت نام و عکس پروفایل گروه
     public void updateGroupInfo(String groupId, String newGroupName, String newPic) {
         Group group = groups.get(groupId);
         if (group != null) {
-            if (newGroupName != null && !newGroupName.isEmpty())
+            if (newGroupName != null)
                 group.setGroupName(newGroupName);
             if (newPic != null)
                 group.setProfilePicturePath(newPic);
         }
     }
 
-    // گرفتن یک گروه خاص بر اساس آیدی آن
     public Group getGroupById(String groupId) {
         return groups.get(groupId);
     }
 
-    // دسترسی مستقیم به کل مپ گروه‌ها
     public HashMap<String, Group> getAllGroups() {
         return groups;
     }
 
-    // فیلتر کردن و استخراج تمام گروه‌هایی که یک یوزر مشخص در آن‌ها عضویت دارد
     public ArrayList<Group> getGroupsForUser(String userId) {
         ArrayList<Group> result = new ArrayList<>();
         for (Group g : groups.values()) {
@@ -59,5 +51,24 @@ public class GroupService {
                 result.add(g);
         }
         return result;
+    }
+
+    public boolean isGroupAdmin(String groupId, String userId) {
+        Group group = groups.get(groupId);
+        if (group == null)
+            return false;
+        return group.isAdmin(userId);
+    }
+
+    public void addAdmin(String groupId, String userId) {
+        Group group = groups.get(groupId);
+        if (group != null)
+            group.addAdmin(userId);
+    }
+
+    public void removeAdmin(String groupId, String userId) {
+        Group group = groups.get(groupId);
+        if (group != null)
+            group.removeAdmin(userId);
     }
 }
