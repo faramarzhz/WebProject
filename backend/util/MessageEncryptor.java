@@ -2,7 +2,7 @@ package util;
 
 public class MessageEncryptor {
     private static int shiftAmount = 5;
-
+    
     public static String encrypt(String content) {
         String result = "";
         for (int i = 0; i < content.length(); i++) {
