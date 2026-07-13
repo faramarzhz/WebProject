@@ -4,6 +4,7 @@ import models.Chat;
 import models.Group;
 import models.User;
 import services.*;
+import storage.Database;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -16,20 +17,20 @@ public class Server {
     private volatile boolean isRunning; // وضعیت روشن بودن سرور مجاز در مولتی‌ترد
 
     // داده‌های اصلی برنامه - اشتراکی بین تمام thread ها
-    private final HashMap<String, User> users;
-    private final HashMap<String, Group> groups;
+    private HashMap<String, User> users;
+    private HashMap<String, Group> groups;
     // سرویس‌های بک‌اند
-    private final AuthService authService;
-    private final UserService userService;
-    private final MessageService messageService;
-    private final ChatService chatService;
-    private final GroupService groupService;
+    private AuthService authService;
+    private UserService userService;
+    private MessageService messageService;
+    private ChatService chatService;
+    private GroupService groupService;
 
     public Server(int port) {
         this.port = port;
         isRunning = false;
-        users = new HashMap<>();
-        groups = new HashMap<>();
+        users = Database.loadUsers();
+        groups = Database.loadGroups();
         authService = new AuthService(users);
         userService = new UserService(users);
         messageService = new MessageService();

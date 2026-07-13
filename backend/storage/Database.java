@@ -1,6 +1,7 @@
 package storage;
 
 import models.User;
+import models.Chat;
 import models.Group;
 import models.Message;
 
@@ -13,6 +14,7 @@ public class Database {
     private static String USERS_FILE = "data/users.txt";
     private static String GROUPS_FILE = "data/groups.txt";
     private static String MESSAGES_FOLDER = "data/messages/";
+    private static String CHATS_FILE = "data/chats.txt";
 
     private static String setToText(HashSet<String> set) {
         if (set.isEmpty())
@@ -221,5 +223,63 @@ public class Database {
         message.setReported(isReported);
 
         return message;
+    }
+
+    public static void saveChats(HashMap<String, Chat> chats) {
+        File file = new File(CHATS_FILE);
+        file.getParentFile().mkdirs();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            for (Chat chat : chats.values()) {
+                writer.write(chatToLine(chat));
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Could not save chats file");
+        }
+    }
+
+    public static HashMap<String, Chat> loadChats() {
+        HashMap<String, Chat> chats = new HashMap<>();
+        File file = new File(CHATS_FILE);
+        if (!file.exists())
+            return chats;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Chat chat = lineToChat(line);
+                if (chat != null)
+                    chats.put(chat.getChatId(), chat);
+            }
+        } catch (IOException e) {
+            System.err.println("Could not read chats file");
+        }
+        return chats;
+    }
+
+    private static String chatToLine(Chat chat) {
+        ArrayList<String> parts = chat.getParticipants();
+        String participants = "";
+        for (int i = 0; i < parts.size(); i++) {
+            if (i > 0)
+                participants += ",";
+            participants += parts.get(i);
+        }
+
+        return chat.getChatId() + "|" + chat.getType() + "|" + chat.getName() + "|" + participants;
+    }
+
+    private static Chat lineToChat(String line) {
+        String[] parts = line.split("\\|");
+        String chatId = parts[0];
+        String type = parts[1];
+        String name = parts[2];
+        String[] participants = parts[3].split(",");
+
+        Chat chat = new Chat(chatId, participants[0], participants[1]);
+        chat.setType(type);
+        chat.setName(name);
+
+        return chat;
     }
 }

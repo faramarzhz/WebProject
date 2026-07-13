@@ -12,7 +12,6 @@ import java.util.regex.Matcher;
 
 public class RequestRouter {
     private Server server;
-    // الگوهای رجکس برای استخراج داینامیک چت‌ ایدی از آدرس URL
     private static final Pattern MESSAGES_PATTERN = Pattern.compile("^/api/chat/([^/]+)/messages$");
     private static final Pattern SEND_PATTERN = Pattern.compile("^/api/chat/([^/]+)/send$");
     private static final Pattern REPORT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/report$");
@@ -27,7 +26,6 @@ public class RequestRouter {
         this.server = server;
     }
 
-    // استخراج مقادیر رشته‌ای از درون JSON
     private String extractField(String json, String field) {
         String key = "\"" + field + "\":\"";
         int start = json.indexOf(key);
@@ -38,7 +36,6 @@ public class RequestRouter {
         return end == -1 ? "" : json.substring(start, end);
     }
 
-    // استخراج مقادیر عددی از درون رشته JSON
     private String extractNumber(String json, String field) {
         String key = "\"" + field + "\":";
         int start = json.indexOf(key);
@@ -53,9 +50,7 @@ public class RequestRouter {
         return json.substring(start, end);
     }
 
-    // مدیریت و هدایت درخواست‌ها به متدهای مربوطه بر اساس آدرس API و متد HTTP
     public String route(String method, String path, String queryString, String body) {
-        // وب سرویس ثبت‌نام کاربر جدید
         if (method.equals("POST") && path.equals("/api/signup")) {
             String username = extractField(body, "username");
             String userId = extractField(body, "userId");
@@ -80,7 +75,6 @@ public class RequestRouter {
                     "Registration failed. Password must have uppercase, lowercase, digit and special char (!@#$%^&*).");
         }
 
-        // وب سرویس ورود به حساب کاربر
         if (method.equals("POST") && path.equals("/api/login")) {
             String userId = extractField(body, "userId");
             String password = extractField(body, "password");
@@ -101,7 +95,6 @@ public class RequestRouter {
             return ResponseBuilder.error(401, "Invalid User ID or password.");
         }
 
-        // وب سرویس گرفتن کل لیست چت‌های یک کاربر مشخص
         if (method.equals("GET") && path.equals("/api/chats")) {
             String userId = getQueryParam(queryString, "userId");
             if (userId.isEmpty())
@@ -120,7 +113,6 @@ public class RequestRouter {
             return ResponseBuilder.ok(sb.toString());
         }
 
-        // وب سرویس گرفتن یا ساخت پیام‌های ذخیره‌شده
         if (method.equals("GET") && path.equals("/api/chat/saved")) {
             String userId = getQueryParam(queryString, "userId");
             if (userId.isEmpty())
@@ -129,7 +121,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"chatId\":\"" + saved.getChatId() + "\"}");
         }
 
-        // وب سرویس ایجاد چت خصوصی جدید بین دو یوزر
         if (method.equals("POST") && path.equals("/api/chat/create")) {
             String type = extractField(body, "type");
             String userId1 = extractField(body, "userId1");
@@ -153,7 +144,6 @@ public class RequestRouter {
                     chat.getChatId() + "\",\"existed\":false}");
         }
 
-        // وب سرویس دریافت تاریخچه کامل پیام‌های یک چت
         if (method.equals("GET")) {
             Matcher matcher = MESSAGES_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -173,7 +163,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس ارسال پیام جدید به یک چت
         if (method.equals("POST")) {
             Matcher matcher = SEND_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -191,7 +180,6 @@ public class RequestRouter {
                 if (chat == null)
                     return ResponseBuilder.error(404, "Chat not found.");
 
-                // چک کردن اینکه آیا گیرنده پیام، فرستنده را بلاک کرده است یا نه
                 String otherUserId = null;
                 for (String p : chat.getParticipants()) {
                     if (!p.equals(sender)) {
@@ -216,7 +204,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس ریپورت
         if (method.equals("POST")) {
             Matcher matcher = REPORT_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -231,7 +218,7 @@ public class RequestRouter {
 
                 for (Message m : chat.getMessages()) {
                     if (m.getMessageId().equals(msgId)) {
-                        server.getMessageService().reportMessage(m);
+                        server.getMessageService().reportMessage(chat, m);
                         System.out.println("[REPORT] Chat:" + chatId + " Msg:" + msgId + " Reporter:" + reporter
                                 + " Reason:" + reason);
                         return ResponseBuilder.ok("{\"message\":\"Message reported successfully.\"}");
@@ -241,7 +228,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس ویرایش پیام
         if (method.equals("POST")) {
             Matcher matcher = MESSAGE_EDIT_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -263,7 +249,7 @@ public class RequestRouter {
                         if (!m.getSenderId().equals(senderId)) {
                             return ResponseBuilder.error(403, "You can only edit your own messages.");
                         }
-                        server.getMessageService().editMessage(m, newContent);
+                        server.getMessageService().editMessage(chat, m, newContent);
                         return ResponseBuilder.ok("{\"message\":\"Message edited successfully.\"}");
                     }
                 }
@@ -271,7 +257,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس حذف پیام
         if (method.equals("POST")) {
             Matcher matcher = MESSAGE_DELETE_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -292,7 +277,7 @@ public class RequestRouter {
                         if (!m.getSenderId().equals(senderId)) {
                             return ResponseBuilder.error(403, "You can only delete your own messages.");
                         }
-                        server.getMessageService().deleteMessage(m);
+                        server.getMessageService().deleteMessage(chat, m);
                         return ResponseBuilder.ok("{\"message\":\"Message deleted successfully.\"}");
                     }
                 }
@@ -300,7 +285,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس ری‌اکشن به پیام
         if (method.equals("POST")) {
             Matcher matcher = MESSAGE_REACT_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -319,7 +303,7 @@ public class RequestRouter {
 
                 for (Message m : chat.getMessages()) {
                     if (m.getMessageId().equals(msgId)) {
-                        server.getMessageService().reactToMessage(m, userId, emoji);
+                        server.getMessageService().reactToMessage(chat, m, userId, emoji);
                         return ResponseBuilder.ok("{\"message\":\"Reaction added.\"}");
                     }
                 }
@@ -327,7 +311,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس حذف ری‌اکشن از پیام
         if (method.equals("POST")) {
             Matcher matcher = MESSAGE_UNREACT_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -345,7 +328,7 @@ public class RequestRouter {
 
                 for (Message m : chat.getMessages()) {
                     if (m.getMessageId().equals(msgId)) {
-                        server.getMessageService().removeReaction(m, userId);
+                        server.getMessageService().removeReaction(chat, m, userId);
                         return ResponseBuilder.ok("{\"message\":\"Reaction removed.\"}");
                     }
                 }
@@ -353,7 +336,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس حذف کامل اکانت یوزر
         if (method.equals("POST") && path.equals("/api/user/delete")) {
             String userId = extractField(body, "userId");
             if (userId.isEmpty())
@@ -365,7 +347,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Account deleted successfully.\"}");
         }
 
-        // وب سرویس بلاک کردن کاربر
         if (method.equals("POST") && path.equals("/api/user/block")) {
             String userId = extractField(body, "userId");
             String targetId = extractField(body, "targetId");
@@ -378,7 +359,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"User blocked.\"}");
         }
 
-        // وب سرویس آنبلاک کردن کاربر
         if (method.equals("POST") && path.equals("/api/user/unblock")) {
             String userId = extractField(body, "userId");
             String targetId = extractField(body, "targetId");
@@ -388,7 +368,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"User unblocked.\"}");
         }
 
-        // وب سرویس افزودن مخاطب جدید
         if (method.equals("POST") && path.equals("/api/contact/add")) {
             String userId = extractField(body, "userId");
             String contactId = extractField(body, "contactId");
@@ -398,7 +377,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Contact added.\"}");
         }
 
-        // وب سرویس حذف مخاطب
         if (method.equals("POST") && path.equals("/api/contact/remove")) {
             String userId = extractField(body, "userId");
             String contactId = extractField(body, "contactId");
@@ -408,7 +386,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Contact removed.\"}");
         }
 
-        // وب سرویس پین کردن چت
         if (method.equals("POST") && path.equals("/api/chat/pin")) {
             String userId = extractField(body, "userId");
             String chatId = extractField(body, "chatId");
@@ -418,7 +395,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Chat pinned.\"}");
         }
 
-        // وب سرویس آنپین کردن چت
         if (method.equals("POST") && path.equals("/api/chat/unpin")) {
             String userId = extractField(body, "userId");
             String chatId = extractField(body, "chatId");
@@ -428,7 +404,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Chat unpinned.\"}");
         }
 
-        // وب سرویس آرشیو کردن چت
         if (method.equals("POST") && path.equals("/api/chat/archive")) {
             String userId = extractField(body, "userId");
             String chatId = extractField(body, "chatId");
@@ -438,7 +413,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Chat archived.\"}");
         }
 
-        // وب سرویس خارج کردن چت از آرشیو
         if (method.equals("POST") && path.equals("/api/chat/unarchive")) {
             String userId = extractField(body, "userId");
             String chatId = extractField(body, "chatId");
@@ -448,7 +422,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Chat unarchived.\"}");
         }
 
-        // وب سرویس میوت کردن چت
         if (method.equals("POST") && path.equals("/api/chat/mute")) {
             String userId = extractField(body, "userId");
             String chatId = extractField(body, "chatId");
@@ -458,7 +431,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Chat muted.\"}");
         }
 
-        // وب سرویس آنمیوت کردن چت
         if (method.equals("POST") && path.equals("/api/chat/unmute")) {
             String userId = extractField(body, "userId");
             String chatId = extractField(body, "chatId");
@@ -468,7 +440,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Chat unmuted.\"}");
         }
 
-        // وب سرویس ساخت گروه چت جدید
         if (method.equals("POST") && path.equals("/api/group/create")) {
             String groupName = extractField(body, "groupName");
             String creatorId = extractField(body, "creatorId");
@@ -480,7 +451,6 @@ public class RequestRouter {
                     + "\",\"groupName\":\"" + g.getGroupName() + "\"}");
         }
 
-        // وب سرویس گرفتن لیست گروه‌های یک کاربر
         if (method.equals("GET") && path.equals("/api/groups")) {
             String userId = getQueryParam(queryString, "userId");
             if (userId.isEmpty())
@@ -496,7 +466,6 @@ public class RequestRouter {
             return ResponseBuilder.ok(sb.toString());
         }
 
-        // وب سرویس ارسال پیام به گروه
         if (method.equals("POST")) {
             Matcher matcher = GROUP_SEND_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -527,7 +496,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس دریافت پیام‌های گروه
         if (method.equals("GET")) {
             Matcher matcher = GROUP_MESSAGES_PATTERN.matcher(path);
             if (matcher.matches()) {
@@ -547,7 +515,6 @@ public class RequestRouter {
             }
         }
 
-        // وب سرویس افزودن عضو به گروه
         if (method.equals("POST") && path.equals("/api/group/addmember")) {
             String groupId = extractField(body, "groupId");
             String requesterId = extractField(body, "requesterId");
@@ -568,7 +535,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Member added.\"}");
         }
 
-        // وب سرویس حذف عضو از گروه (یا ترک گروه توسط خود عضو)
         if (method.equals("POST") && path.equals("/api/group/removemember")) {
             String groupId = extractField(body, "groupId");
             String requesterId = extractField(body, "requesterId");
@@ -579,7 +545,6 @@ public class RequestRouter {
             Group group = server.getGroupService().getGroupById(groupId);
             if (group == null)
                 return ResponseBuilder.error(404, "Group not found.");
-            // یا خود شخص در حال ترک گروه است، یا ادمین دارد او را حذف می‌کند
             boolean isSelfLeaving = requesterId.equals(userId);
             if (!isSelfLeaving && !group.isAdmin(requesterId)) {
                 return ResponseBuilder.error(403, "Only group admins can remove other members.");
@@ -588,7 +553,6 @@ public class RequestRouter {
             return ResponseBuilder.ok("{\"message\":\"Member removed.\"}");
         }
 
-        // وب سرویس ویرایش اطلاعات گروه
         if (method.equals("POST") && path.equals("/api/group/update")) {
             String groupId = extractField(body, "groupId");
             String requesterId = extractField(body, "requesterId");
@@ -610,7 +574,6 @@ public class RequestRouter {
         return ResponseBuilder.error(404, "Endpoint not found: " + method + " " + path);
     }
 
-    // تبدیل دستی داده‌های شی چت به ساختار متن JSON
     private String chatToJson(Chat chat, String currentUserId) {
         Message lastMsg = null;
         ArrayList<Message> msgs = chat.getMessages();
@@ -644,7 +607,6 @@ public class RequestRouter {
         return sb.toString();
     }
 
-    // تبدیل فیلدهای شی گروه به فرمت متنی JSON
     private String groupToJson(Group group) {
         Message lastMsg = null;
         ArrayList<Message> msgs = group.getMessages();
@@ -671,7 +633,6 @@ public class RequestRouter {
         return sb.toString();
     }
 
-    // تبدیل فیلدهای شی پیام به فرمت متنی JSON
     private String messageToJson(Message msg) {
         return "{" + "\"id\":\"" + msg.getMessageId() + "\"," + "\"senderId\":\""
                 + msg.getSenderId() + "\"," + "\"content\":\""
@@ -680,7 +641,6 @@ public class RequestRouter {
                 + msg.isReported() + "}";
     }
 
-    // گرفتن و دیکود کردن متغیرها از داخل آدرس URL
     private String getQueryParam(String queryString, String key) {
         if (queryString == null || queryString.isEmpty())
             return "";

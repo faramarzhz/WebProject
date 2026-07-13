@@ -1,38 +1,54 @@
 package services;
 
 import models.Group;
+import models.Message;
+import storage.Database;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class GroupService {
-    private HashMap<String, Group> groups = new HashMap<>();
+    private HashMap<String, Group> groups;
+
+    public GroupService() {
+        groups = Database.loadGroups();
+        for (Group group : groups.values()) {
+            ArrayList<Message> messages = Database.loadMessages(group.getGroupId());
+            group.getMessages().addAll(messages);
+        }
+    }
 
     public Group createGroup(String groupId, String groupName, String creatorId) {
         Group newGroup = new Group(groupId, groupName, creatorId);
         newGroup.getMembers().add(creatorId);
         groups.put(groupId, newGroup);
+        Database.saveGroups(groups);
         return newGroup;
     }
 
     public void addMember(String groupId, String userId) {
         Group group = groups.get(groupId);
-        if (group != null)
+        if (group != null) {
             group.getMembers().add(userId);
+            Database.saveGroups(groups);
+        }
     }
 
     public void removeMember(String groupId, String userId) {
         Group group = groups.get(groupId);
-        if (group != null)
+        if (group != null) {
             group.getMembers().remove(userId);
+            Database.saveGroups(groups);
+        }
     }
 
     public void updateGroupInfo(String groupId, String newGroupName, String newPic) {
         Group group = groups.get(groupId);
         if (group != null) {
-            if (newGroupName != null)
+            if (newGroupName != null && !newGroupName.isEmpty())
                 group.setGroupName(newGroupName);
             if (newPic != null)
                 group.setProfilePicturePath(newPic);
+            Database.saveGroups(groups);
         }
     }
 
@@ -62,13 +78,17 @@ public class GroupService {
 
     public void addAdmin(String groupId, String userId) {
         Group group = groups.get(groupId);
-        if (group != null)
+        if (group != null) {
             group.addAdmin(userId);
+            Database.saveGroups(groups);
+        }
     }
 
     public void removeAdmin(String groupId, String userId) {
         Group group = groups.get(groupId);
-        if (group != null)
+        if (group != null) {
             group.removeAdmin(userId);
+            Database.saveGroups(groups);
+        }
     }
 }
