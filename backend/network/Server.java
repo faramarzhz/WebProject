@@ -4,7 +4,7 @@ import models.Chat;
 import models.Group;
 import models.User;
 import services.*;
-import storage.Database;
+import database.Database;
 
 import java.io.IOException;
 import java.net.ServerSocket;

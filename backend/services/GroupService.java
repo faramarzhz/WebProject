@@ -2,7 +2,7 @@ package services;
 
 import models.Group;
 import models.Message;
-import storage.Database;
+import database.Database;
 import java.util.ArrayList;
 import java.util.HashMap;
 

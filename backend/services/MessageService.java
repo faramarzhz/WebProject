@@ -3,7 +3,7 @@ package services;
 import models.Chat;
 import models.Group;
 import models.Message;
-import storage.Database;
+import database.Database;
 import java.util.HashMap;
 
 public class MessageService {

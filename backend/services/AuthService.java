@@ -2,7 +2,7 @@ package services;
 
 import models.User;
 import util.PasswordEncryptor;
-import storage.Database;
+import database.Database;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

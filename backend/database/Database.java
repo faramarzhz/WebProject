@@ -1,6 +1,7 @@
-package storage;
+package database;
 
 import models.User;
+import util.MessageEncryptor;
 import models.Chat;
 import models.Group;
 import models.Message;
@@ -18,7 +19,7 @@ public class Database {
 
     private static String setToText(HashSet<String> set) {
         if (set.isEmpty())
-        return "none";
+            return "none";
         String result = "";
         int i = 0;
         for (String item : set) {
@@ -195,8 +196,9 @@ public class Database {
     }
 
     private static String messageToLine(Message message) {
+        String encryptedContent = MessageEncryptor.encrypt(message.getContent());
         return message.getMessageId() + "|" + message.getSenderId() + "|" +
-                message.getContent() + "|" + message.getTimestamp() + "|" +
+                encryptedContent + "|" + message.getTimestamp() + "|" +
                 message.isEdited() + "|" + message.isDeleted() + "|" + message.isReported();
     }
 
@@ -204,14 +206,14 @@ public class Database {
         String[] parts = line.split("\\|");
         String messageId = parts[0];
         String senderId = parts[1];
-        String content = parts[2];
+        String content = MessageEncryptor.decrypt(parts[2]);
         long timestamp = Long.parseLong(parts[3]);
         boolean isEdited = false;
         boolean isDeleted = false;
         boolean isReported = false;
         if (parts[4].equals("true"))
             isEdited = true;
-        if (parts[5].equals("true")) 
+        if (parts[5].equals("true"))
             isDeleted = true;
         if (parts[6].equals("true"))
             isReported = true;

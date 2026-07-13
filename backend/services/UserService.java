@@ -1,7 +1,7 @@
 package services;
 
 import models.User;
-import storage.Database;
+import database.Database;
 import java.util.HashMap;
 
 public class UserService {
