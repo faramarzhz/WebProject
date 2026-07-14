@@ -14,17 +14,16 @@ import java.util.HashMap;
 public class Server {
     private int port;
     private ServerSocket serverSocket;
-    private volatile boolean isRunning; // وضعیت روشن بودن سرور مجاز در مولتی‌ترد
+    private volatile boolean isRunning;
 
-    // داده‌های اصلی برنامه - اشتراکی بین تمام thread ها
     private HashMap<String, User> users;
     private HashMap<String, Group> groups;
-    // سرویس‌های بک‌اند
     private AuthService authService;
     private UserService userService;
     private MessageService messageService;
     private ChatService chatService;
     private GroupService groupService;
+    private HashMap<String, WebSocketHandler> activeConnections;
 
     public Server(int port) {
         this.port = port;
@@ -36,9 +35,9 @@ public class Server {
         messageService = new MessageService();
         chatService = new ChatService();
         groupService = new GroupService();
+        activeConnections = new HashMap<>();
     }
 
-    // راه‌اندازی سرور سوکت روی پورت مشخص شده و پذیرش کلاینت‌ها
     public void start() {
         try {
             serverSocket = new ServerSocket(port);
@@ -46,8 +45,7 @@ public class Server {
             System.out.println("Server listening on port " + port);
             while (isRunning) {
                 try {
-                    Socket clientSocket = serverSocket.accept(); // منتظر اتصال کلاینت جدید می‌ماند
-                    // اجرای هر client در یک thread جداگانه برای پشتیبانی هم‌زمان
+                    Socket clientSocket = serverSocket.accept();
                     new Thread(new ClientHandler(clientSocket, this)).start();
                 } catch (IOException e) {
                     if (isRunning)
@@ -59,7 +57,6 @@ public class Server {
         }
     }
 
-    // خاموش کردن سرور و بستن سوکت اصلی
     public void stop() {
         isRunning = false;
         try {
@@ -69,7 +66,6 @@ public class Server {
         }
     }
 
-    // ─── Getters ───────────────────────────────────────────────
     public AuthService getAuthService() {
         return authService;
     }
@@ -100,5 +96,9 @@ public class Server {
 
     public HashMap<String, Chat> getChats() {
         return chatService.getAllChats();
+    }
+
+    public HashMap<String, WebSocketHandler> getActiveConnections() {
+        return activeConnections;
     }
 }
