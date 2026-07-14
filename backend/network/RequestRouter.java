@@ -500,6 +500,14 @@ public class RequestRouter {
                     return ResponseBuilder.error(429, "Spam detected. Max 5 messages per second.");
                 }
                 server.getMessageService().addMessageToGroup(group, msg);
+                for (String memberId : group.getMembers()) {
+                    if (!memberId.equals(sender)) {
+                        WebSocketHandler memberHandler = server.getActiveConnections().get(memberId);
+                        if (memberHandler != null) {
+                            memberHandler.sendMessage(messageToJson(msg));
+                        }
+                    }
+                }
                 return ResponseBuilder.ok("{\"messageId\":\"" + msgId + "\"}");
             }
         }
