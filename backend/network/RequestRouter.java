@@ -200,6 +200,14 @@ public class RequestRouter {
                     return ResponseBuilder.error(429, "Spam detected. Max 5 messages per second.");
                 }
                 server.getMessageService().addMessageToChat(chat, msg);
+
+                if (otherUserId != null) {
+                    WebSocketHandler receiverHandler = server.getActiveConnections().get(otherUserId);
+                    if (receiverHandler != null) {
+                        receiverHandler.sendMessage(messageToJson(msg));
+                    }
+                }
+
                 return ResponseBuilder.ok("{\"messageId\":\"" + msgId + "\"}");
             }
         }

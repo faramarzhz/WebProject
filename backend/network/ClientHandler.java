@@ -8,6 +8,7 @@ public class ClientHandler implements Runnable {
     private Socket socket;
     private Server server;
     private RequestRouter router;
+    private boolean isWebSocket = false;
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -22,7 +23,7 @@ public class ClientHandler implements Runnable {
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             out = socket.getOutputStream();
-            // خواندن خط اول درخواست
+
             String requestLine = in.readLine();
             if (requestLine == null || requestLine.trim().isEmpty())
                 return;
@@ -38,15 +39,32 @@ public class ClientHandler implements Runnable {
                 path = fullPath.substring(0, qIdx);
                 queryString = fullPath.substring(qIdx + 1);
             }
+
             int contentLength = 0;
+            String webSocketKey = "";
+            boolean isWebSocketRequest = false;
             String headerLine;
             while ((headerLine = in.readLine()) != null && !headerLine.isEmpty()) {
                 if (headerLine.toLowerCase().startsWith("content-length:")) {
                     try {
                         contentLength = Integer.parseInt(headerLine.split(":", 2)[1].trim());
                     } catch (NumberFormatException ignored) {
-                    }   
+                    }
                 }
+                if (headerLine.toLowerCase().startsWith("upgrade:") && headerLine.toLowerCase().contains("websocket")) {
+                    isWebSocketRequest = true;
+                }
+                if (headerLine.toLowerCase().startsWith("sec-websocket-key:")) {
+                    webSocketKey = headerLine.split(":", 2)[1].trim();
+                }
+            }
+
+            if (isWebSocketRequest) {
+                isWebSocket = true;
+                String userId = getUserIdFromQuery(queryString);
+                WebSocketHandler wsHandler = new WebSocketHandler(socket, webSocketKey, server, userId);
+                wsHandler.handle();
+                return;
             }
 
             String body = "";
@@ -69,21 +87,36 @@ public class ClientHandler implements Runnable {
             out.flush();
         } catch (IOException e) {
         } finally {
-            try {
-                if (in != null)
-                    in.close();
-            } catch (IOException ignored) {
-            }
-            try {
-                if (out != null)
-                    out.close();
-            } catch (IOException ignored) {
-            }
-            try {
-                if (!socket.isClosed())
-                    socket.close();
-            } catch (IOException ignored) {
+            if (!isWebSocket) {
+                try {
+                    if (in != null)
+                        in.close();
+                } catch (IOException ignored) {
+                }
+                try {
+                    if (out != null)
+                        out.close();
+                } catch (IOException ignored) {
+                }
+                try {
+                    if (!socket.isClosed())
+                        socket.close();
+                } catch (IOException ignored) {
+                }
             }
         }
     }
-}
+
+        private String getUserIdFromQuery(String queryString) {
+            if (queryString == null || queryString.isEmpty())
+                return "";
+            String[] pairs = queryString.split("&");
+            for (String pair : pairs) {
+                String[] kv = pair.split("=", 2);
+                if (kv.length == 2 && kv[0].equals("userId")) {
+                    return kv[1];
+                }
+            }
+            return "";
+        }
+        }
