@@ -654,7 +654,6 @@ public class RequestRouter {
                     handler.sendMessage(memberAddedEventJson(groupId, userId));
                 }
             }
-
             return ResponseBuilder.ok("{\"message\":\"Member added.\"}");
         }
 
