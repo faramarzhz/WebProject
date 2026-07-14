@@ -21,6 +21,8 @@ public class RequestRouter {
     private static final Pattern MESSAGE_UNREACT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/unreact$");
     private static final Pattern GROUP_SEND_PATTERN = Pattern.compile("^/api/group/([^/]+)/send$");
     private static final Pattern GROUP_MESSAGES_PATTERN = Pattern.compile("^/api/group/([^/]+)/messages$");
+    private static final Pattern GROUP_MESSAGE_EDIT_PATTERN = Pattern.compile("^/api/group/([^/]+)/message/edit$");
+    private static final Pattern GROUP_MESSAGE_DELETE_PATTERN = Pattern.compile("^/api/group/([^/]+)/message/delete$");
 
     public RequestRouter(Server server) {
         this.server = server;
@@ -204,7 +206,7 @@ public class RequestRouter {
                 if (otherUserId != null) {
                     WebSocketHandler receiverHandler = server.getActiveConnections().get(otherUserId);
                     if (receiverHandler != null) {
-                        receiverHandler.sendMessage(messageToJson(msg));
+                        receiverHandler.sendMessage(newMessageEventJson(msg));
                     }
                 }
 
@@ -258,6 +260,16 @@ public class RequestRouter {
                             return ResponseBuilder.error(403, "You can only edit your own messages.");
                         }
                         server.getMessageService().editMessage(chat, m, newContent);
+
+                        for (String p : chat.getParticipants()) {
+                            if (!p.equals(senderId)) {
+                                WebSocketHandler handler = server.getActiveConnections().get(p);
+                                if (handler != null) {
+                                    handler.sendMessage(messageEditedEventJson(m));
+                                }
+                            }
+                        }
+
                         return ResponseBuilder.ok("{\"message\":\"Message edited successfully.\"}");
                     }
                 }
@@ -286,6 +298,16 @@ public class RequestRouter {
                             return ResponseBuilder.error(403, "You can only delete your own messages.");
                         }
                         server.getMessageService().deleteMessage(chat, m);
+
+                        for (String p : chat.getParticipants()) {
+                            if (!p.equals(senderId)) {
+                                WebSocketHandler handler = server.getActiveConnections().get(p);
+                                if (handler != null) {
+                                    handler.sendMessage(messageDeletedEventJson(msgId));
+                                }
+                            }
+                        }
+
                         return ResponseBuilder.ok("{\"message\":\"Message deleted successfully.\"}");
                     }
                 }
@@ -504,11 +526,88 @@ public class RequestRouter {
                     if (!memberId.equals(sender)) {
                         WebSocketHandler memberHandler = server.getActiveConnections().get(memberId);
                         if (memberHandler != null) {
-                            memberHandler.sendMessage(messageToJson(msg));
+                            memberHandler.sendMessage(newMessageEventJson(msg));
                         }
                     }
                 }
                 return ResponseBuilder.ok("{\"messageId\":\"" + msgId + "\"}");
+            }
+        }
+
+        if (method.equals("POST")) {
+            Matcher matcher = GROUP_MESSAGE_EDIT_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String groupId = matcher.group(1);
+                String msgId = extractField(body, "messageId");
+                String newContent = extractField(body, "newContent");
+                String senderId = extractField(body, "senderId");
+
+                if (msgId.isEmpty() || newContent.isEmpty() || senderId.isEmpty()) {
+                    return ResponseBuilder.error(400, "Missing messageId, newContent or senderId.");
+                }
+
+                Group group = server.getGroupService().getGroupById(groupId);
+                if (group == null)
+                    return ResponseBuilder.error(404, "Group not found.");
+
+                for (Message m : group.getMessages()) {
+                    if (m.getMessageId().equals(msgId)) {
+                        if (!m.getSenderId().equals(senderId)) {
+                            return ResponseBuilder.error(403, "You can only edit your own messages.");
+                        }
+                        server.getMessageService().editMessageInGroup(group, m, newContent);
+
+                        for (String memberId : group.getMembers()) {
+                            if (!memberId.equals(senderId)) {
+                                WebSocketHandler handler = server.getActiveConnections().get(memberId);
+                                if (handler != null) {
+                                    handler.sendMessage(messageEditedEventJson(m));
+                                }
+                            }
+                        }
+
+                        return ResponseBuilder.ok("{\"message\":\"Message edited successfully.\"}");
+                    }
+                }
+                return ResponseBuilder.error(404, "Message not found.");
+            }
+        }
+
+        if (method.equals("POST")) {
+            Matcher matcher = GROUP_MESSAGE_DELETE_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String groupId = matcher.group(1);
+                String msgId = extractField(body, "messageId");
+                String senderId = extractField(body, "senderId");
+
+                if (msgId.isEmpty() || senderId.isEmpty()) {
+                    return ResponseBuilder.error(400, "Missing messageId or senderId.");
+                }
+
+                Group group = server.getGroupService().getGroupById(groupId);
+                if (group == null)
+                    return ResponseBuilder.error(404, "Group not found.");
+
+                for (Message m : group.getMessages()) {
+                    if (m.getMessageId().equals(msgId)) {
+                        if (!m.getSenderId().equals(senderId)) {
+                            return ResponseBuilder.error(403, "You can only delete your own messages.");
+                        }
+                        server.getMessageService().deleteMessageInGroup(group, m);
+
+                        for (String memberId : group.getMembers()) {
+                            if (!memberId.equals(senderId)) {
+                                WebSocketHandler handler = server.getActiveConnections().get(memberId);
+                                if (handler != null) {
+                                    handler.sendMessage(messageDeletedEventJson(msgId));
+                                }
+                            }
+                        }
+
+                        return ResponseBuilder.ok("{\"message\":\"Message deleted successfully.\"}");
+                    }
+                }
+                return ResponseBuilder.error(404, "Message not found.");
             }
         }
 
@@ -548,6 +647,14 @@ public class RequestRouter {
                 return ResponseBuilder.error(404, "User not found.");
             }
             server.getGroupService().addMember(groupId, userId);
+
+            for (String memberId : group.getMembers()) {
+                WebSocketHandler handler = server.getActiveConnections().get(memberId);
+                if (handler != null) {
+                    handler.sendMessage(memberAddedEventJson(groupId, userId));
+                }
+            }
+
             return ResponseBuilder.ok("{\"message\":\"Member added.\"}");
         }
 
@@ -565,7 +672,21 @@ public class RequestRouter {
             if (!isSelfLeaving && !group.isAdmin(requesterId)) {
                 return ResponseBuilder.error(403, "Only group admins can remove other members.");
             }
+
+            WebSocketHandler removedUserHandler = server.getActiveConnections().get(userId);
+            if (removedUserHandler != null) {
+                removedUserHandler.sendMessage(memberRemovedEventJson(groupId, userId));
+            }
+
             server.getGroupService().removeMember(groupId, userId);
+
+            for (String memberId : group.getMembers()) {
+                WebSocketHandler handler = server.getActiveConnections().get(memberId);
+                if (handler != null) {
+                    handler.sendMessage(memberRemovedEventJson(groupId, userId));
+                }
+            }
+
             return ResponseBuilder.ok("{\"message\":\"Member removed.\"}");
         }
 
@@ -655,6 +776,26 @@ public class RequestRouter {
                 + msg.getContent() + "\"," + "\"time\":\"" + msg.getTimestamp() + "\","
                 + "\"isEdited\":" + msg.isEdited() + "," + "\"isDeleted\":" + msg.isDeleted() + "," + "\"isReported\":"
                 + msg.isReported() + "}";
+    }
+
+    private String newMessageEventJson(Message msg) {
+        return "{\"type\":\"newMessage\",\"message\":" + messageToJson(msg) + "}";
+    }
+
+    private String messageEditedEventJson(Message msg) {
+        return "{\"type\":\"messageEdited\",\"message\":" + messageToJson(msg) + "}";
+    }
+
+    private String messageDeletedEventJson(String messageId) {
+        return "{\"type\":\"messageDeleted\",\"messageId\":\"" + messageId + "\"}";
+    }
+
+    private String memberAddedEventJson(String groupId, String userId) {
+        return "{\"type\":\"memberAdded\",\"groupId\":\"" + groupId + "\",\"userId\":\"" + userId + "\"}";
+    }
+
+    private String memberRemovedEventJson(String groupId, String userId) {
+        return "{\"type\":\"memberRemoved\",\"groupId\":\"" + groupId + "\",\"userId\":\"" + userId + "\"}";
     }
 
     private String getQueryParam(String queryString, String key) {
