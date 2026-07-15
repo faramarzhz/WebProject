@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home-WebChat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="home-body">
+<div class="home-wrapper">
+    <!-- header: avatar + search + settings -->
+    <div class="home-header">
+        <div class="avatar" id="user-avatar">A</div>
+        <input class="search-box" type="text" id="search-input" placeholder="Search chats..." oninput="searchChats()">
+        <button class="settings-btn" onclick="goSettings()">S</button>
+    </div>
+    <div class="chat-list" id="chat-list"></div>
+    <div class="home-footer">
+        <button class="new-chat-btn" onclick="goNewChat()">+</button>
+    </div>
+</div>
+<script src="Home.js"></script>
+</body>
+</html>

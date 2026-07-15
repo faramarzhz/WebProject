@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings - WebChat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="home-body">
+<div class="home-wrapper">
+    <div class="home-header">
+        <button class="back-btn" onclick="goBack()">&#8592;</button>
+        <span style="color:white; font-weight:bold; font-size:17px; flex:1;">Settings</span>
+    </div>
+    <div class="settings-body">
+        <!-- avatar -->
+        <div class="settings-avatar-section">
+            <div class="settings-avatar" id="settings-avatar">?</div>
+            <div class="avatar-btns">
+                <button class="settings-action-btn" onclick="changePhoto()">Change Photo</button>
+                <button class="settings-action-btn danger" onclick="removePhoto()">Remove Photo</button>
+            </div>
+        </div>
+        <div class="settings-section">
+            <div class="settings-label">Username</div>
+            <input type="text" id="username-input" placeholder="Enter new username">
+            <button onclick="saveUsername()">Save Username</button>
+        </div>
+        <div class="settings-section">
+            <div class="settings-label">User ID</div>
+            <input type="text" id="userid-input" placeholder="Enter new user ID">
+            <button onclick="saveUserId()">Save User ID</button>
+        </div>
+        <!-- تنظیمات تم -->
+        <div class="settings-section">
+            <div class="settings-label">Theme</div>
+            <div class="toggle-row">
+                <span style="color:white; font-size:14px;">Dark Mode</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="dark-toggle" checked onchange="toggleTheme()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="settings-section">
+            <button onclick="logout()">Logout</button>
+        </div>
+        <div class="settings-section">
+            <button class="danger" onclick="deleteAccount()">Delete Account</button>
+        </div>
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+</div>
+<input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+<script src="Settings.js"></script>
+</body>
+</html>

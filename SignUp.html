@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up - WebChat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="form-container">
+    <h1>Sign Up</h1>
+    <input type="text" id="username" placeholder="Username">
+    <input type="text" id="userId" placeholder="User ID (unique)">
+    <input type="password" id="password" placeholder="Password">
+    <input type="password" id="repeatPassword" placeholder="Confirm Password">
+    <div class="error-msg" id="error-msg" style="color: red; margin: 10px 0;"></div>
+    <button onclick="register()">Sign Up</button>
+    <div class="divider">or</div>
+    <p>Already have an account? <a href="Login.html">Login</a></p>
+</div>
+<script src="SignUp.js"></script>
+</body>
+</html>
