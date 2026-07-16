@@ -19,6 +19,7 @@ public class RequestRouter {
     private Pattern MESSAGE_DELETE_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/delete$");
     private Pattern MESSAGE_REACT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/react$");
     private Pattern MESSAGE_UNREACT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/unreact$");
+    private Pattern MESSAGE_HISTORY_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/history$");
     private Pattern GROUP_SEND_PATTERN = Pattern.compile("^/api/group/([^/]+)/send$");
     private Pattern GROUP_MESSAGES_PATTERN = Pattern.compile("^/api/group/([^/]+)/messages$");
     private Pattern GROUP_MESSAGE_EDIT_PATTERN = Pattern.compile("^/api/group/([^/]+)/message/edit$");
@@ -121,6 +122,31 @@ public class RequestRouter {
                 }
                 sb.append("]");
                 return ResponseBuilder.buildResponse(200, sb.toString());
+            }
+        }
+        if (method.equals("GET")) {
+            Matcher matcher = MESSAGE_HISTORY_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                String chatId = matcher.group(1);
+                String msgId = getQueryParam(queryString, "messageId");
+                if (msgId.isEmpty())
+                    return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId." + "\"}");
+                Chat chat = server.getChatService().getChatById(chatId);
+                if (chat == null) {
+                    Group group = server.getGroups().get(chatId);
+                    if (group == null)
+                        return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Chat not found." + "\"}");
+                    for (Message m : group.getMessages()) {
+                        if (m.getMessageId().equals(msgId))
+                            return ResponseBuilder.buildResponse(200, messageHistoryToJson(m));
+                    }
+                    return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
+                }
+                for (Message m : chat.getMessages()) {
+                    if (m.getMessageId().equals(msgId))
+                        return ResponseBuilder.buildResponse(200, messageHistoryToJson(m));
+                }
+                return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
         if (method.equals("POST")) {
@@ -280,6 +306,17 @@ public class RequestRouter {
                 }
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
+        }
+        if (method.equals("GET") && path.equals("/api/user/lastseen")) {
+            String userId = getQueryParam(queryString, "userId");
+            if (userId.isEmpty())
+                return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId." + "\"}");
+            User user = server.getUserService().getUserById(userId);
+            if (user == null)
+                return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "User not found." + "\"}");
+            boolean online = server.getActiveConnections().containsKey(userId);
+            String json = "{\"online\":" + online + ",\"lastSeen\":" + user.getLastSeen() + "}";
+            return ResponseBuilder.buildResponse(200, json);
         }
         if (method.equals("POST") && path.equals("/api/user/delete")) {
             String userId = extractField(body, "userId");
@@ -628,6 +665,24 @@ public class RequestRouter {
                 sb.append(",");
             sb.append("\"").append(memberId).append("\"");
             i++;
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
+    private String messageHistoryToJson(Message msg) {
+        StringBuilder sb = new StringBuilder("{\"messageId\":\"" + msg.getMessageId() + "\",");
+        sb.append("\"isDeleted\":").append(msg.isDeleted()).append(",");
+        sb.append("\"isEdited\":").append(msg.isEdited()).append(",");
+        sb.append("\"currentContent\":\"").append(msg.getContent()).append("\",");
+        sb.append("\"history\":[");
+        ArrayList<models.MessageEdit> edits = msg.getEditHistory();
+        for (int i = 0; i < edits.size(); i++) {
+            if (i > 0)
+                sb.append(",");
+            models.MessageEdit edit = edits.get(i);
+            sb.append("{\"previousContent\":\"").append(edit.getPreviousContent()).append("\",");
+            sb.append("\"editedAt\":").append(edit.getEditedAt()).append("}");
         }
         sb.append("]}");
         return sb.toString();
