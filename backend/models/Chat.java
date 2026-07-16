@@ -4,22 +4,21 @@ import java.util.ArrayList;
 
 public class Chat {
     private String chatId;
-    private String type; // تایپ چت
-    private ArrayList<String> participants;//برای مدیریت ساده وسبک مخاطبین دوطرفه
-    private ArrayList<Message> messages;// ارای لیست بخاطر حفظ کردن ترتیب
+    private String type; 
+    private ArrayList<String> participants;
+    private ArrayList<Message> messages;
     private String name;
 
     public Chat(String chatId, String user1, String user2) {
         this.chatId = chatId;
-        type = "private"; // برای فاز 1 پیش فرض روی پرایوت میزاریم
+        type = "private"; 
         participants = new ArrayList<>();
         participants.add(user1);
         participants.add(user2);
         messages = new ArrayList<>();
-        name = ""; // اسم چت(برای گروه ها)
+        name = ""; 
     }
 
-    // Getters and Setters
     public String getChatId() {
         return chatId;
     }

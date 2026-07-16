@@ -7,16 +7,16 @@ public class User {
     private String password;
     private String userId;
     private String profilePicturePath;
-    private boolean isBlocked; // مسدودی موقت حساب به خاطر تلاش‌های ناموفق ورود
-    private int failedLoginAttempts; // تعداد دفعاتی که کاربر رمز اشتباه زده
-    private long blockUntil; // زمان پایان محرومیت کاربر(میلی‌ثانیه)
-    private HashSet<String> contacts;// هش‌ست برای سرعت بالای سرچ کردن و تکراری نبودن
+    private boolean isBlocked; 
+    private int failedLoginAttempts;
+    private long blockUntil; 
+    private HashSet<String> contacts;
 
-    // فیلدهای جدید فاز ۲
-    private HashSet<String> blockedUserIds; // لیست کاربرانی که این یوزر آن‌ها را بلاک کرده
-    private HashSet<String> pinnedChatIds; // چت‌های سنجاق‌شده توسط این کاربر
-    private HashSet<String> archivedChatIds; // چت‌های آرشیوشده توسط این کاربر
-    private HashSet<String> mutedChatIds; // چت‌هایی که این کاربر نوتیفیکیشن‌شان را خاموش کرده
+    private long lastSeen;
+    private HashSet<String> blockedUserIds;
+    private HashSet<String> pinnedChatIds;
+    private HashSet<String> archivedChatIds;
+    private HashSet<String> mutedChatIds;
 
     public User(String username, String password, String userId) {
         this.username = username;
@@ -33,7 +33,6 @@ public class User {
         mutedChatIds = new HashSet<>();
     }
 
-    // Getters and Setters
     public String getUsername() {
         return username;
     }
@@ -112,5 +111,13 @@ public class User {
 
     public HashSet<String> getMutedChatIds() {
         return mutedChatIds;
+    }
+
+    public long getLastSeen() {
+        return lastSeen;
+    }
+
+    public void setLastSeen(long lastSeen) {
+        this.lastSeen = lastSeen;
     }
 }

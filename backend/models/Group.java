@@ -6,10 +6,10 @@ import java.util.HashSet;
 public class Group {
     private String groupId;
     private String groupName;
-    private String profilePicturePath; // برای فاز دو
-    private HashSet<String> members; // هش‌ست برای سرعت بالا و تکراری نبودن
-    private ArrayList<Message> messages;// ارای لیست بخاطر حفظ کردن ترتیب
-
+    private String profilePicturePath; 
+    private HashSet<String> members; 
+    private ArrayList<Message> messages;
+    
     private String creatorId; 
     private HashSet<String> adminIds;
 
@@ -24,7 +24,6 @@ public class Group {
         adminIds.add(creatorId);
     }
 
-    // Getters and Setters
     public String getGroupId() {
         return groupId;
     }
@@ -70,8 +69,7 @@ public class Group {
     }
 
     public void removeAdmin(String userId) {
-        if (!userId.equals(creatorId)) {
+        if (!userId.equals(creatorId))
             adminIds.remove(userId);
-        }
     }
 }

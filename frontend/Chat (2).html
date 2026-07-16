@@ -8,7 +8,6 @@
 </head>
 <body class="chat-body">
 <div class="chat-container">
-    <!-- header -->
     <div class="chat-header">
         <button class="back-button" onclick="goHome()">←</button>
         <div class="chat-info-bar" onclick="openChatInfo()">
@@ -20,29 +19,29 @@
         <button class="search-toggle-btn" onclick="toggleSearch()" title="Search messages">🔍</button>
         <div class="header-avatar" id="header-avatar">C</div>
     </div>
-    <!-- search bar (hidden by default) -->
     <div class="chat-search-bar" id="chat-search-bar" style="display:none;">
         <input type="text" id="chat-search-input" placeholder="Search in messages..." oninput="searchMessages()">
         <button onclick="toggleSearch()">✕</button>
     </div>
     <div class="messages-container" id="messages-container"></div>
-    <!-- bottom input -->
     <div class="bottom-bar">
-        <button class="attach-button">📎</button>
+        <button class="attach-button" title="Attach file">📎</button>
         <input type="text" id="message-input" placeholder="Type a message...">
         <button class="send-button" onclick="sendMessage()">➤</button>
     </div>
 </div>
+<!-- مورد ۷: input مخفی برای انتخاب فایل — Chat.js این رو پیدا می‌کنه و به دکمه 📎 وصل می‌کنه -->
+<input type="file" id="file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip,.txt" style="display:none;">
 <!-- chat info modal -->
-<div class="chat-info-modal" id="chat-info-modal" style="display: none;">
+<div class="chat-info-modal" id="chat-info-modal" style="display:none;">
     <div class="chat-info-box">
         <button class="close-info" onclick="closeChatInfo()">✕</button>
         <div class="profile-circle" id="info-avatar">C</div>
         <h2 id="info-name">Chat Name</h2>
         <div id="info-id">#id</div>
-        <div id="group-members-section" style="display: none; text-align: left; margin: 15px 0; border-top: 1px solid #2e2e2e; padding-top: 10px;">
-            <h4 style="color: #00cc55; margin-bottom: 8px;">👥 Group Members:</h4>
-            <ul id="members-list" style="list-style: none; padding: 0; max-height: 120px; overflow-y: auto; color: #ccc; font-size: 13px;"></ul>
+        <div id="group-members-section" style="display:none;text-align:left;margin:15px 0;border-top:1px solid #2e2e2e;padding-top:10px;">
+            <h4 style="color:#00cc55;margin-bottom:8px;">👥 Group Members:</h4>
+            <ul id="members-list" style="list-style:none;padding:0;max-height:120px;overflow-y:auto;color:#ccc;font-size:13px;"></ul>
         </div>
         <div class="info-buttons"></div>
     </div>

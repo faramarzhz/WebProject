@@ -3,23 +3,28 @@ package server;
 import cli.AdminCLI;
 import network.Server;
 
+class ServerThread extends Thread {
+    private Server server;
+    public ServerThread(Server server) {
+        this.server = server;
+    }
+    public void run() {
+        server.start();
+    }
+}
+
 public class Main {
     public static void main(String[] args) {
-        Server server = new Server(8080); // تعریف سرور روی پورت پیش‌فرض ۸۰۸۰
-        Thread serverThread = new Thread(() -> server.start());
-        serverThread.setDaemon(true); // ست کردن به عنوان دیمون برای بسته شدن خودکار با اتمام برنامه اصلی
+        Server server = new Server(8080);
+        ServerThread serverThread = new ServerThread(server);
         serverThread.start();
         System.out.println("WebChat Backend Server successfully started on port 8080");
-        try {
-            Thread.sleep(300); // وقفه کوتاه برای اطمینان از بالا آمدن کامل سرور سوکت
-        } catch (InterruptedException ignored) {
-        }
 
-        AdminCLI cli = new AdminCLI(server); // راه‌اندازی و اجرای لایه خط فرمان مدیریت سرور
+        AdminCLI cli = new AdminCLI(server);
         cli.start();
         try {
-            Thread.currentThread().join(); // نگه داشتن ترد اصلی برای زنده ماندن بک‌اند
-        } catch (InterruptedException ignored) {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
         }
     }
 }

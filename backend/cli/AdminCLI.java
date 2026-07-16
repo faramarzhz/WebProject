@@ -13,11 +13,10 @@ import java.util.regex.Pattern;
 public class AdminCLI {
     private Server server;
     private Scanner scanner;
-    // الگوهای رجکس برای بررسی ولیدیشن پسورد
-    private static final Pattern UPPERCASE_PATTERN = Pattern.compile("[A-Z]");
-    private static final Pattern LOWERCASE_PATTERN = Pattern.compile("[a-z]");
-    private static final Pattern DIGIT_PATTERN = Pattern.compile("[0-9]");
-    private static final Pattern SPECIAL_CHAR_PATTERN = Pattern.compile("[!@#$%^&*]");
+    private Pattern UPPERCASE_PATTERN = Pattern.compile("[A-Z]");
+    private Pattern LOWERCASE_PATTERN = Pattern.compile("[a-z]");
+    private Pattern DIGIT_PATTERN = Pattern.compile("[0-9]");
+    private Pattern SPECIAL_CHAR_PATTERN = Pattern.compile("[!@#$%^&*]");
 
     public AdminCLI(Server server) {
         this.server = server;
@@ -25,12 +24,13 @@ public class AdminCLI {
     }
 
     public void start() {
-        System.out.print("\nEnter Admin Username: ");
-        String username = scanner.nextLine().trim();
-        System.out.print("Enter Admin Password: ");
-        String password = scanner.nextLine().trim();
+        System.out.println();
+        System.out.println("Enter Admin Username: ");
+        String username = scanner.nextLine();
+        System.out.println("Enter Admin Password: ");
+        String password = scanner.nextLine();
 
-        if (username.equals("admin") && password.equals("adminpass")) {
+        if (username.equals("faramarz") && password.equals("faramaz07")) {
             System.out.println("Admin authenticated.");
             showHelp();
             runCLI();
@@ -41,15 +41,15 @@ public class AdminCLI {
 
     private void showHelp() {
         System.out.println("         Admin CLI - Commands           ");
-        System.out.println("");
+        System.out.println();
         System.out.println("  listusers              - List all users");
         System.out.println("  adduser                - Add a new user");
-        System.out.println("  deleteuser <userId>    - Delete a user");
+        System.out.println("  deleteuser             - Delete a user");
         System.out.println("  listgroups             - List all groups");
         System.out.println("  addgroup               - Add a new group");
-        System.out.println("  deletegroup <groupId>  - Delete a group");
-        System.out.println("  addmember <groupId>    - Add member to group");
-        System.out.println("  removemember <groupId> - Remove member from group");
+        System.out.println("  deletegroup            - Delete a group");
+        System.out.println("  addmember              - Add member to group");
+        System.out.println("  removemember           - Remove member from group");
         System.out.println("  reports                - Show reported messages");
         System.out.println("  help                   - Show this help");
         System.out.println("  exit                   - Exit admin panel");
@@ -57,11 +57,9 @@ public class AdminCLI {
 
     private void runCLI() {
         while (true) {
-            System.out.print("\nadmin> ");
-            String input = scanner.nextLine().trim().toLowerCase();
-            String[] parts = input.split("\\s+", 2);
-            String command = parts[0];
-            String arg = parts.length > 1 ? parts[1] : "";
+            System.out.println();
+            System.out.print("admin> ");
+            String command = scanner.nextLine();
 
             switch (command) {
                 case "listusers":
@@ -71,7 +69,7 @@ public class AdminCLI {
                     addUser();
                     break;
                 case "deleteuser":
-                    deleteUser(arg);
+                    deleteUser();
                     break;
                 case "listgroups":
                     listGroups();
@@ -80,13 +78,13 @@ public class AdminCLI {
                     addGroup();
                     break;
                 case "deletegroup":
-                    deleteGroup(arg);
+                    deleteGroup();
                     break;
                 case "addmember":
-                    addMember(arg);
+                    addMember();
                     break;
                 case "removemember":
-                    removeMember(arg);
+                    removeMember();
                     break;
                 case "reports":
                     showReports();
@@ -104,29 +102,30 @@ public class AdminCLI {
     }
 
 
-    // User Commands
     private void listUsers() {
         HashMap<String, User> users = server.getUsers();
         if (users.isEmpty()) {
             System.out.println("No users registered.");
             return;
         }
-        System.out.println("\n[Users]");
-        for (User u : users.values()) {
-            System.out.println("  ID: " + u.getUserId() +
-                    " | Username: " + u.getUsername() +
-                    (u.isBlocked() ? " | [BLOCKED]" : ""));
+        System.out.println();
+        System.out.println("Users:");
+        for (User user : users.values()) {
+            String status = "";
+            if(user.isBlocked())
+            status = " | [BLOCKED]";
+            System.out.println("  ID: " + user.getUserId() + " | Username: " + user.getUsername() + status);
         }
     }
 
     private void addUser() {
         HashMap<String, User> users = server.getUsers();
         System.out.print("User ID: ");
-        String id = scanner.nextLine().trim();
+        String id = scanner.nextLine();
         System.out.print("Username: ");
-        String name = scanner.nextLine().trim();
+        String name = scanner.nextLine();
         System.out.print("Password: ");
-        String pass = scanner.nextLine().trim();
+        String pass = scanner.nextLine();
 
         if (id.isEmpty() || name.isEmpty() || pass.isEmpty()) {
             System.out.println("All fields are required.");
@@ -162,11 +161,9 @@ public class AdminCLI {
         System.out.println("User added: " + id);
     }
 
-    private void deleteUser(String userId) {
-        if (userId.isEmpty()) {
-            System.out.print("User ID to delete: ");
-            userId = scanner.nextLine().trim();
-        }
+    private void deleteUser() {
+        System.out.print("User ID to delete: ");
+        String userId = scanner.nextLine();
         HashMap<String, User> users = server.getUsers();
         if (users.remove(userId) != null) {
             System.out.println("User deleted: " + userId);
@@ -176,14 +173,14 @@ public class AdminCLI {
     }
 
 
-    // Group Commands
     private void listGroups() {
         HashMap<String, Group> groups = server.getGroups();
         if (groups.isEmpty()) {
             System.out.println("No groups yet.");
             return;
         }
-        System.out.println("\n[Groups]");
+        System.out.println();
+        System.out.println("[Groups]");
         for (Group g : groups.values()) {
             System.out.println("  ID: " + g.getGroupId() +
                     " | Name: " + g.getGroupName() +
@@ -195,11 +192,11 @@ public class AdminCLI {
     private void addGroup() {
         HashMap<String, Group> groups = server.getGroups();
         System.out.print("Group ID: ");
-        String gid = scanner.nextLine().trim();
+        String gid = scanner.nextLine();
         System.out.print("Group Name: ");
-        String gname = scanner.nextLine().trim();
+        String gname = scanner.nextLine();
         System.out.print("Creator User ID: ");
-        String creatorId = scanner.nextLine().trim();
+        String creatorId = scanner.nextLine();
 
         if (gid.isEmpty() || gname.isEmpty() || creatorId.isEmpty()) {
             System.out.println("All fields are required.");
@@ -220,11 +217,9 @@ public class AdminCLI {
         System.out.println("Group created: " + gid);
     }
 
-    private void deleteGroup(String groupId) {
-        if (groupId.isEmpty()) {
-            System.out.print("Group ID to delete: ");
-            groupId = scanner.nextLine().trim();
-        }
+    private void deleteGroup() {
+        System.out.print("Group ID to delete: ");
+        String groupId = scanner.nextLine();
         HashMap<String, Group> groups = server.getGroups();
         if (groups.remove(groupId) != null) {
             System.out.println("Group deleted.");
@@ -233,11 +228,9 @@ public class AdminCLI {
         }
     }
 
-    private void addMember(String groupId) {
-        if (groupId.isEmpty()) {
-            System.out.print("Group ID: ");
-            groupId = scanner.nextLine().trim();
-        }
+    private void addMember() {
+        System.out.print("Group ID: ");
+        String groupId = scanner.nextLine();
         if (groupId.isEmpty()) {
             System.out.println("Group ID cannot be empty.");
             return;
@@ -249,7 +242,7 @@ public class AdminCLI {
             return;
         }
         System.out.print("User ID to add: ");
-        String uid = scanner.nextLine().trim();
+        String uid = scanner.nextLine();
         if (uid.isEmpty()) {
             System.out.println("User ID cannot be empty.");
             return;
@@ -266,11 +259,9 @@ public class AdminCLI {
         System.out.println("Member added.");
     }
 
-    private void removeMember(String groupId) {
-        if (groupId.isEmpty()) {
-            System.out.print("Group ID: ");
-            groupId = scanner.nextLine().trim();
-        }
+    private void removeMember() {
+        System.out.print("Group ID: ");
+        String groupId = scanner.nextLine();
         if (groupId.isEmpty()) {
             System.out.println("Group ID cannot be empty.");
             return;
@@ -282,7 +273,7 @@ public class AdminCLI {
             return;
         }
         System.out.print("User ID to remove: ");
-        String uid = scanner.nextLine().trim();
+        String uid = scanner.nextLine();
         if (uid.isEmpty()) {
             System.out.println("User ID cannot be empty.");
             return;
@@ -298,13 +289,13 @@ public class AdminCLI {
         }
     }
 
-    // Reports
     private void showReports() {
         HashMap<String, Chat> chats = server.getChats();
         HashMap<String, Group> groups = server.getGroups();
         boolean found = false;
 
-        System.out.println("\n─── Reported Messages ───");
+        System.out.println();
+        System.out.println("Reported Messages");
         System.out.println("[Private Chats]");
         for (Chat chat : chats.values()) {
             for (Message msg : chat.getMessages()) {
