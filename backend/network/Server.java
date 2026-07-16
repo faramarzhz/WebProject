@@ -1,11 +1,9 @@
 package network;
-
 import models.Chat;
 import models.Group;
 import models.User;
 import services.*;
 import database.Database;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,7 +13,6 @@ public class Server {
     private int port;
     private ServerSocket serverSocket;
     private volatile boolean isRunning;
-
     private HashMap<String, User> users;
     private HashMap<String, Group> groups;
     private AuthService authService;

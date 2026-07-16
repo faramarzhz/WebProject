@@ -1,5 +1,4 @@
 package models;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -12,7 +11,6 @@ public class Message {
     private boolean isDeleted;
     private String mediaPath;
     private boolean isReported;
-
     private ArrayList<MessageEdit> editHistory; 
     private LinkedHashMap<String, String> reactions; 
 
@@ -85,7 +83,7 @@ public class Message {
         this.isReported = isReported;
     }
 
-    public void recordEditBeforeChange() {
+    public void oldtext() {
         editHistory.add(new MessageEdit(this.content));
     }
 

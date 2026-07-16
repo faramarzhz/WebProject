@@ -1,36 +1,34 @@
 package models;
-
 import java.util.HashSet;
 
 public class User {
     private String username;
     private String password;
     private String userId;
-    private String profilePicturePath;
+    private String profilePath;
     private boolean isBlocked; 
-    private int failedLoginAttempts;
+    private int failLogin;
     private long blockUntil; 
     private HashSet<String> contacts;
-
     private long lastSeen;
-    private HashSet<String> blockedUserIds;
-    private HashSet<String> pinnedChatIds;
-    private HashSet<String> archivedChatIds;
-    private HashSet<String> mutedChatIds;
+    private HashSet<String> blockUser;
+    private HashSet<String> pinChat;
+    private HashSet<String> archiveChat;
+    private HashSet<String> muteChat;
 
     public User(String username, String password, String userId) {
         this.username = username;
         this.password = password;
         this.userId = userId;
-        profilePicturePath = "";
+        profilePath = "";
         isBlocked = false;
-        failedLoginAttempts = 0;
+        failLogin = 0;
         blockUntil = 0;
         contacts = new HashSet<>();
-        blockedUserIds = new HashSet<>();
-        pinnedChatIds = new HashSet<>();
-        archivedChatIds = new HashSet<>();
-        mutedChatIds = new HashSet<>();
+        blockUser = new HashSet<>();
+        pinChat = new HashSet<>();
+        archiveChat = new HashSet<>();
+        muteChat = new HashSet<>();
     }
 
     public String getUsername() {
@@ -57,12 +55,12 @@ public class User {
         this.userId = userId;
     }
 
-    public String getProfilePicturePath() {
-        return profilePicturePath;
+    public String getProfilePath() {
+        return profilePath;
     }
 
-    public void setProfilePicturePath(String profilePicturePath) {
-        this.profilePicturePath = profilePicturePath;
+    public void setProfilePath(String profilePicturePath) {
+        this.profilePath = profilePicturePath;
     }
 
     public boolean isBlocked() {
@@ -73,12 +71,12 @@ public class User {
         this.isBlocked = isBlocked;
     }
 
-    public int getFailedLoginAttempts() {
-        return failedLoginAttempts;
+    public int getFailLogin() {
+        return failLogin;
     }
 
-    public void setFailedLoginAttempts(int failedLoginAttempts) {
-        this.failedLoginAttempts = failedLoginAttempts;
+    public void setFailLogin(int failedLoginAttempts) {
+        this.failLogin = failedLoginAttempts;
     }
 
     public long getBlockUntil() {
@@ -93,24 +91,24 @@ public class User {
         return contacts;
     }
 
-    public HashSet<String> getBlockedUserIds() {
-        return blockedUserIds;
+    public HashSet<String> getBlockUser() {
+        return blockUser;
     }
 
     public boolean hasBlocked(String otherUserId) {
-        return blockedUserIds.contains(otherUserId);
+        return blockUser.contains(otherUserId);
     }
 
-    public HashSet<String> getPinnedChatIds() {
-        return pinnedChatIds;
+    public HashSet<String> getPinChat() {
+        return pinChat;
     }
 
-    public HashSet<String> getArchivedChatIds() {
-        return archivedChatIds;
+    public HashSet<String> getArchiveChat() {
+        return archiveChat;
     }
 
-    public HashSet<String> getMutedChatIds() {
-        return mutedChatIds;
+    public HashSet<String> getMuteChat() {
+        return muteChat;
     }
 
     public long getLastSeen() {

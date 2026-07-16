@@ -1,5 +1,4 @@
 package services;
-
 import models.User;
 import util.PasswordEncryptor;
 import database.Database;
@@ -36,15 +35,16 @@ public class AuthService {
             return null;
         if (user.isBlocked() && now >= user.getBlockUntil()) {
             user.setBlocked(false);
-            user.setFailedLoginAttempts(0);
+            user.setFailLogin(0);
         }
         if (user.getPassword().equals(PasswordEncryptor.hashPassword(password))) {
-            user.setFailedLoginAttempts(0);
+            user.setFailLogin(0);
             Database.saveUsers(users);
             return user;
-        } else {
-            int attempts = user.getFailedLoginAttempts() + 1;
-            user.setFailedLoginAttempts(attempts);
+        } 
+        else {
+            int attempts = user.getFailLogin() + 1;
+            user.setFailLogin(attempts);
             if (attempts >= 5) {
                 user.setBlocked(true);
                 user.setBlockUntil(now + 300000);
@@ -79,7 +79,6 @@ public class AuthService {
         Matcher m3 = p3.matcher(password);
         Pattern p4 = Pattern.compile("[!@#$%^&*]");
         Matcher m4 = p4.matcher(password);
-
         while (m1.find()) {
             hasUpper = true;
             break;
@@ -98,7 +97,7 @@ public class AuthService {
         }
         if (hasUpper && hasLower)
             if (hasDigit && hasSpecial)
-                return true;
+            return true;
         return false;
     }
 }

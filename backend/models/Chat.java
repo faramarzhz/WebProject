@@ -1,20 +1,19 @@
 package models;
-
 import java.util.ArrayList;
 
 public class Chat {
     private String chatId;
     private String type; 
-    private ArrayList<String> participants;
+    private ArrayList<String> users;
     private ArrayList<Message> messages;
     private String name;
 
     public Chat(String chatId, String user1, String user2) {
         this.chatId = chatId;
         type = "private"; 
-        participants = new ArrayList<>();
-        participants.add(user1);
-        participants.add(user2);
+        users = new ArrayList<>();
+        users.add(user1);
+        users.add(user2);
         messages = new ArrayList<>();
         name = ""; 
     }
@@ -31,8 +30,8 @@ public class Chat {
         this.type = type;
     }
 
-    public ArrayList<String> getParticipants() {
-        return participants;
+    public ArrayList<String> getUsers() {
+        return users;
     }
 
     public ArrayList<Message> getMessages() {

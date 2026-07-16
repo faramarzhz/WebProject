@@ -1,5 +1,4 @@
 package server;
-
 import cli.AdminCLI;
 import network.Server;
 
@@ -19,7 +18,6 @@ public class Main {
         ServerThread serverThread = new ServerThread(server);
         serverThread.start();
         System.out.println("WebChat Backend Server successfully started on port 8080");
-
         AdminCLI cli = new AdminCLI(server);
         cli.start();
         try {

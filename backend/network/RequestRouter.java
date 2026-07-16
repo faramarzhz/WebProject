@@ -1,5 +1,4 @@
 package network;
-
 import models.Chat;
 import models.Group;
 import models.Message;
@@ -12,38 +11,38 @@ import java.util.regex.Matcher;
 
 public class RequestRouter {
     private Server server;
-    private Pattern MESSAGES_PATTERN = Pattern.compile("^/api/chat/([^/]+)/messages$");
-    private Pattern SEND_PATTERN = Pattern.compile("^/api/chat/([^/]+)/send$");
+    private Pattern message = Pattern.compile("^/api/chat/([^/]+)/messages$");
+    private Pattern send = Pattern.compile("^/api/chat/([^/]+)/send$");
     private Pattern REPORT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/report$");
-    private Pattern MESSAGE_EDIT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/edit$");
-    private Pattern MESSAGE_DELETE_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/delete$");
-    private Pattern MESSAGE_REACT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/react$");
-    private Pattern MESSAGE_UNREACT_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/unreact$");
-    private Pattern MESSAGE_HISTORY_PATTERN = Pattern.compile("^/api/chat/([^/]+)/message/history$");
-    private Pattern GROUP_SEND_PATTERN = Pattern.compile("^/api/group/([^/]+)/send$");
-    private Pattern GROUP_MESSAGES_PATTERN = Pattern.compile("^/api/group/([^/]+)/messages$");
-    private Pattern GROUP_MESSAGE_EDIT_PATTERN = Pattern.compile("^/api/group/([^/]+)/message/edit$");
-    private Pattern GROUP_MESSAGE_DELETE_PATTERN = Pattern.compile("^/api/group/([^/]+)/message/delete$");
+    private Pattern edit = Pattern.compile("^/api/chat/([^/]+)/message/edit$");
+    private Pattern delete = Pattern.compile("^/api/chat/([^/]+)/message/delete$");
+    private Pattern vakonesh = Pattern.compile("^/api/chat/([^/]+)/message/react$");
+    private Pattern deletevako = Pattern.compile("^/api/chat/([^/]+)/message/unreact$");
+    private Pattern history = Pattern.compile("^/api/chat/([^/]+)/message/history$");
+    private Pattern groupsend = Pattern.compile("^/api/group/([^/]+)/send$");
+    private Pattern groupmess = Pattern.compile("^/api/group/([^/]+)/messages$");
+    private Pattern groupeditmess = Pattern.compile("^/api/group/([^/]+)/message/edit$");
+    private Pattern groupdelmess = Pattern.compile("^/api/group/([^/]+)/message/delete$");
     public RequestRouter(Server server) {
         this.server = server;
     }
 
-    private String extractField(String json, String field) {
-        String key = "\"" + field + "\":\"";
-        if (!json.contains(key))
+    private String extractField(String json, String fild) {
+        String kelid = "\"" + fild + "\":\"";
+        if (!json.contains(kelid))
             return "";
-        String[] parts = json.split(key);
-        String afterKey = parts[1];
-        String[] valueParts = afterKey.split("\"");
-        return valueParts[0];
+        String[] parts = json.split(kelid);
+        String kelidbadi = parts[1];
+        String[] pqrts = kelidbadi.split("\"");
+        return pqrts[0];
     }
 
-    public String route(String method, String path, String queryString, String body) {
-        if (method.equals("POST") && path.equals("/api/signup")) {
-            String username = extractField(body, "username");
-            String userId = extractField(body, "userId");
-            String password = extractField(body, "password");
-            String confirm = extractField(body, "confirmPassword");
+    public String route(String metod, String path, String query, String badane) {
+        if (metod.equals("POST") && path.equals("/api/signup")) {
+            String username = extractField(badane, "username");
+            String userId = extractField(badane, "userId");
+            String password = extractField(badane, "password");
+            String confirm = extractField(badane, "confirmPassword");
             if (username.isEmpty() || userId.isEmpty() || password.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing required fields." + "\"}");
             if (!password.equals(confirm))
@@ -55,45 +54,45 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(201, "{\"message\":\"Registered successfully\",\"userId\":\"" + userId + "\"}");
             return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Registration failed. Password must have uppercase, lowercase, digit and special char (!@#$%^&*)." + "\"}");
         }
-        if (method.equals("POST") && path.equals("/api/login")) {
-            String userId = extractField(body, "userId");
-            String password = extractField(body, "password");
-            if (userId.isEmpty() || password.isEmpty())
+        if (metod.equals("POST") && path.equals("/api/login")) {
+            String userid = extractField(badane, "userId");
+            String password = extractField(badane, "password");
+            if (userid.isEmpty() || password.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or password." + "\"}");
-            if (server.getAuthService().isBlocked(userId))
+            if (server.getAuthService().isBlocked(userid))
                 return ResponseBuilder.buildResponse(429, "{\"error\":\"" + "Account temporarily locked due to too many failed attempts. Try again in 5 minutes." + "\"}");
-            User user = server.getAuthService().login(userId, password);
+            User user = server.getAuthService().login(userid, password);
             if (user != null)
                 return ResponseBuilder.buildResponse(200, "{\"message\":\"Login successful\",\"userId\":\"" + user.getUserId() + "\",\"username\":\"" + user.getUsername() + "\"}");
             return ResponseBuilder.buildResponse(401, "{\"error\":\"" + "Invalid User ID or password." + "\"}");
         }
-        if (method.equals("GET") && path.equals("/api/chats")) {
-            String userId = getQueryParam(queryString, "userId");
-            if (userId.isEmpty())
+        if (metod.equals("GET") && path.equals("/api/chats")) {
+            String userid = getQueryParam(query, "userId");
+            if (userid.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId." + "\"}");
-            ArrayList<Chat> chats = server.getChatService().getChatsForUser(userId);
+            ArrayList<Chat> chats = server.getChatService().getChatsForUser(userid);
             StringBuilder sb = new StringBuilder("[");
             boolean first = true;
             for (Chat chat : chats) {
                 if (!first)
                     sb.append(",");
                 first = false;
-                sb.append(chatToJson(chat, userId));
+                sb.append(chatToJson(chat, userid));
             }
             sb.append("]");
             return ResponseBuilder.buildResponse(200, sb.toString());
         }
-        if (method.equals("GET") && path.equals("/api/chat/saved")) {
-            String userId = getQueryParam(queryString, "userId");
+        if (metod.equals("GET") && path.equals("/api/chat/saved")) {
+            String userId = getQueryParam(query, "userId");
             if (userId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId." + "\"}");
             Chat saved = server.getChatService().getOrCreateSavedMessages(userId);
             return ResponseBuilder.buildResponse(200, "{\"chatId\":\"" + saved.getChatId() + "\"}");
         }
-        if (method.equals("POST") && path.equals("/api/chat/create")) {
-            String type = extractField(body, "type");
-            String userId1 = extractField(body, "userId1");
-            String userId2 = extractField(body, "userId2");
+        if (metod.equals("POST") && path.equals("/api/chat/create")) {
+            String type = extractField(badane, "type");
+            String userId1 = extractField(badane, "userId1");
+            String userId2 = extractField(badane, "userId2");
             if (userId1.isEmpty() || userId2.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId1 or userId2." + "\"}");
             if (!server.getUserService().userExists(userId2))
@@ -106,8 +105,8 @@ public class RequestRouter {
             chat.setType("private");
             return ResponseBuilder.buildResponse(201, "{\"chatId\":\"" + chat.getChatId() + "\",\"existed\":false}");
         }
-        if (method.equals("GET")) {
-            Matcher matcher = MESSAGES_PATTERN.matcher(path);
+        if (metod.equals("GET")) {
+            Matcher matcher = message.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
                 Chat chat = server.getChatService().getChatById(chatId);
@@ -124,11 +123,11 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(200, sb.toString());
             }
         }
-        if (method.equals("GET")) {
-            Matcher matcher = MESSAGE_HISTORY_PATTERN.matcher(path);
+        if (metod.equals("GET")) {
+            Matcher matcher = history.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
-                String msgId = getQueryParam(queryString, "messageId");
+                String msgId = getQueryParam(query, "messageId");
                 if (msgId.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId." + "\"}");
                 Chat chat = server.getChatService().getChatById(chatId);
@@ -149,12 +148,12 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("POST")) {
-            Matcher matcher = SEND_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = send.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
-                String sender = extractField(body, "senderId");
-                String content = extractField(body, "content");
+                String sender = extractField(badane, "senderId");
+                String content = extractField(badane, "content");
                 if (sender.isEmpty() || content.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing senderId or content." + "\"}");
                 if (content.length() > 1000)
@@ -163,7 +162,7 @@ public class RequestRouter {
                 if (chat == null)
                     return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Chat not found." + "\"}");
                 String otherUserId = null;
-                for (String p : chat.getParticipants()) {
+                for (String p : chat.getUsers()) {
                     if (!p.equals(sender)) {
                         otherUserId = p;
                         break;
@@ -187,13 +186,13 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(200, "{\"messageId\":\"" + msgId + "\"}");
             }
         }
-        if (method.equals("POST")) {
+        if (metod.equals("POST")) {
             Matcher matcher = REPORT_PATTERN.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
-                String msgId = extractField(body, "messageId");
-                String reporter = extractField(body, "reporterId");
-                String reason = extractField(body, "reason");
+                String msgId = extractField(badane, "messageId");
+                String reporter = extractField(badane, "reporterId");
+                String reason = extractField(badane, "reason");
                 Chat chat = server.getChatService().getChatById(chatId);
                 if (chat == null)
                     return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Chat not found." + "\"}");
@@ -207,13 +206,13 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("POST")) {
-            Matcher matcher = MESSAGE_EDIT_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = edit.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
-                String msgId = extractField(body, "messageId");
-                String newContent = extractField(body, "newContent");
-                String senderId = extractField(body, "senderId");
+                String msgId = extractField(badane, "messageId");
+                String newContent = extractField(badane, "newContent");
+                String senderId = extractField(badane, "senderId");
                 if (msgId.isEmpty() || newContent.isEmpty() || senderId.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId, newContent or senderId." + "\"}");
                 Chat chat = server.getChatService().getChatById(chatId);
@@ -224,7 +223,7 @@ public class RequestRouter {
                         if (!m.getSenderId().equals(senderId))
                             return ResponseBuilder.buildResponse(403, "{\"error\":\"" + "You can only edit your own messages." + "\"}");
                         server.getMessageService().editMessage(chat, m, newContent);
-                        for (String p : chat.getParticipants()) {
+                        for (String p : chat.getUsers()) {
                             if (!p.equals(senderId)) {
                                 WebSocketHandler handler = server.getActiveConnections().get(p);
                                 if (handler != null)
@@ -237,12 +236,12 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("POST")) {
-            Matcher matcher = MESSAGE_DELETE_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = delete.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
-                String msgId = extractField(body, "messageId");
-                String senderId = extractField(body, "senderId");
+                String msgId = extractField(badane, "messageId");
+                String senderId = extractField(badane, "senderId");
                 if (msgId.isEmpty() || senderId.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId or senderId." + "\"}");
                 Chat chat = server.getChatService().getChatById(chatId);
@@ -253,7 +252,7 @@ public class RequestRouter {
                         if (!m.getSenderId().equals(senderId))
                             return ResponseBuilder.buildResponse(403, "{\"error\":\"" + "You can only delete your own messages." + "\"}");
                         server.getMessageService().deleteMessage(chat, m);
-                        for (String p : chat.getParticipants()) {
+                        for (String p : chat.getUsers()) {
                             if (!p.equals(senderId)) {
                                 WebSocketHandler handler = server.getActiveConnections().get(p);
                                 if (handler != null)
@@ -266,13 +265,13 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("POST")) {
-            Matcher matcher = MESSAGE_REACT_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = vakonesh.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
-                String msgId = extractField(body, "messageId");
-                String userId = extractField(body, "userId");
-                String emoji = extractField(body, "emoji");
+                String msgId = extractField(badane, "messageId");
+                String userId = extractField(badane, "userId");
+                String emoji = extractField(badane, "emoji");
                 if (msgId.isEmpty() || userId.isEmpty() || emoji.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId, userId or emoji." + "\"}");
                 Chat chat = server.getChatService().getChatById(chatId);
@@ -280,19 +279,18 @@ public class RequestRouter {
                     return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Chat not found." + "\"}");
                 for (Message m : chat.getMessages()) {
                     if (m.getMessageId().equals(msgId)) {
-                        server.getMessageService().reactToMessage(chat, m, userId, emoji);
                         return ResponseBuilder.buildResponse(200, "{\"message\":\"Reaction added.\"}");
                     }
                 }
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("POST")) {
-            Matcher matcher = MESSAGE_UNREACT_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = deletevako.matcher(path);
             if (matcher.matches()) {
                 String chatId = matcher.group(1);
-                String msgId = extractField(body, "messageId");
-                String userId = extractField(body, "userId");
+                String msgId = extractField(badane, "messageId");
+                String userId = extractField(badane, "userId");
                 if (msgId.isEmpty() || userId.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId or userId." + "\"}");
                 Chat chat = server.getChatService().getChatById(chatId);
@@ -300,15 +298,14 @@ public class RequestRouter {
                     return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Chat not found." + "\"}");
                 for (Message m : chat.getMessages()) {
                     if (m.getMessageId().equals(msgId)) {
-                        server.getMessageService().removeReaction(chat, m, userId);
                         return ResponseBuilder.buildResponse(200, "{\"message\":\"Reaction removed.\"}");
                     }
                 }
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("GET") && path.equals("/api/user/lastseen")) {
-            String userId = getQueryParam(queryString, "userId");
+        if (metod.equals("GET") && path.equals("/api/user/lastseen")) {
+            String userId = getQueryParam(query, "userId");
             if (userId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId." + "\"}");
             User user = server.getUserService().getUserById(userId);
@@ -318,8 +315,8 @@ public class RequestRouter {
             String json = "{\"online\":" + online + ",\"lastSeen\":" + user.getLastSeen() + "}";
             return ResponseBuilder.buildResponse(200, json);
         }
-        if (method.equals("POST") && path.equals("/api/user/delete")) {
-            String userId = extractField(body, "userId");
+        if (metod.equals("POST") && path.equals("/api/user/delete")) {
+            String userId = extractField(badane, "userId");
             if (userId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId." + "\"}");
             if (!server.getUserService().userExists(userId))
@@ -327,9 +324,9 @@ public class RequestRouter {
             server.getUserService().deleteAccount(userId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Account deleted successfully.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/user/block")) {
-            String userId = extractField(body, "userId");
-            String targetId = extractField(body, "targetId");
+        if (metod.equals("POST") && path.equals("/api/user/block")) {
+            String userId = extractField(badane, "userId");
+            String targetId = extractField(badane, "targetId");
             if (userId.isEmpty() || targetId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or targetId." + "\"}");
             if (!server.getUserService().userExists(targetId))
@@ -337,89 +334,89 @@ public class RequestRouter {
             server.getUserService().blockUser(userId, targetId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"User blocked.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/user/unblock")) {
-            String userId = extractField(body, "userId");
-            String targetId = extractField(body, "targetId");
+        if (metod.equals("POST") && path.equals("/api/user/unblock")) {
+            String userId = extractField(badane, "userId");
+            String targetId = extractField(badane, "targetId");
             if (userId.isEmpty() || targetId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or targetId." + "\"}");
             server.getUserService().unblockUser(userId, targetId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"User unblocked.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/contact/add")) {
-            String userId = extractField(body, "userId");
-            String contactId = extractField(body, "contactId");
+        if (metod.equals("POST") && path.equals("/api/contact/add")) {
+            String userId = extractField(badane, "userId");
+            String contactId = extractField(badane, "contactId");
             if (userId.isEmpty() || contactId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing parameters." + "\"}");
             server.getUserService().addContact(userId, contactId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Contact added.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/contact/remove")) {
-            String userId = extractField(body, "userId");
-            String contactId = extractField(body, "contactId");
+        if (metod.equals("POST") && path.equals("/api/contact/remove")) {
+            String userId = extractField(badane, "userId");
+            String contactId = extractField(badane, "contactId");
             if (userId.isEmpty() || contactId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing parameters." + "\"}");
             server.getUserService().removeContact(userId, contactId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Contact removed.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/chat/pin")) {
-            String userId = extractField(body, "userId");
-            String chatId = extractField(body, "chatId");
+        if (metod.equals("POST") && path.equals("/api/chat/pin")) {
+            String userId = extractField(badane, "userId");
+            String chatId = extractField(badane, "chatId");
             if (userId.isEmpty() || chatId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or chatId." + "\"}");
             server.getUserService().pinChat(userId, chatId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Chat pinned.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/chat/unpin")) {
-            String userId = extractField(body, "userId");
-            String chatId = extractField(body, "chatId");
+        if (metod.equals("POST") && path.equals("/api/chat/unpin")) {
+            String userId = extractField(badane, "userId");
+            String chatId = extractField(badane, "chatId");
             if (userId.isEmpty() || chatId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or chatId." + "\"}");
             server.getUserService().unpinChat(userId, chatId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Chat unpinned.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/chat/archive")) {
-            String userId = extractField(body, "userId");
-            String chatId = extractField(body, "chatId");
+        if (metod.equals("POST") && path.equals("/api/chat/archive")) {
+            String userId = extractField(badane, "userId");
+            String chatId = extractField(badane, "chatId");
             if (userId.isEmpty() || chatId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or chatId." + "\"}");
             server.getUserService().archiveChat(userId, chatId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Chat archived.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/chat/unarchive")) {
-            String userId = extractField(body, "userId");
-            String chatId = extractField(body, "chatId");
+        if (metod.equals("POST") && path.equals("/api/chat/unarchive")) {
+            String userId = extractField(badane, "userId");
+            String chatId = extractField(badane, "chatId");
             if (userId.isEmpty() || chatId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or chatId." + "\"}");
             server.getUserService().unarchiveChat(userId, chatId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Chat unarchived.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/chat/mute")) {
-            String userId = extractField(body, "userId");
-            String chatId = extractField(body, "chatId");
+        if (metod.equals("POST") && path.equals("/api/chat/mute")) {
+            String userId = extractField(badane, "userId");
+            String chatId = extractField(badane, "chatId");
             if (userId.isEmpty() || chatId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or chatId." + "\"}");
             server.getUserService().muteChat(userId, chatId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Chat muted.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/chat/unmute")) {
-            String userId = extractField(body, "userId");
-            String chatId = extractField(body, "chatId");
+        if (metod.equals("POST") && path.equals("/api/chat/unmute")) {
+            String userId = extractField(badane, "userId");
+            String chatId = extractField(badane, "chatId");
             if (userId.isEmpty() || chatId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId or chatId." + "\"}");
             server.getUserService().unmuteChat(userId, chatId);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Chat unmuted.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/group/create")) {
-            String groupName = extractField(body, "groupName");
-            String creatorId = extractField(body, "creatorId");
+        if (metod.equals("POST") && path.equals("/api/group/create")) {
+            String groupName = extractField(badane, "groupName");
+            String creatorId = extractField(badane, "creatorId");
             if (groupName.isEmpty() || creatorId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing parameters." + "\"}");
             String groupId = IdGenerator.generateId();
             Group g = server.getGroupService().createGroup(groupId, groupName, creatorId);
-            return ResponseBuilder.buildResponse(201, "{\"groupId\":\"" + g.getGroupId() + "\",\"groupName\":\"" + g.getGroupName() + "\"}");
+            return ResponseBuilder.buildResponse(201, "{\"groupId\":\"" + g.getGroupId() + "\",\"groupName\":\"" + g.getName() + "\"}");
         }
-        if (method.equals("GET") && path.equals("/api/groups")) {
-            String userId = getQueryParam(queryString, "userId");
+        if (metod.equals("GET") && path.equals("/api/groups")) {
+            String userId = getQueryParam(query, "userId");
             if (userId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing userId." + "\"}");
             ArrayList<Group> groups = server.getGroupService().getGroupsForUser(userId);
@@ -432,12 +429,12 @@ public class RequestRouter {
             sb.append("]");
             return ResponseBuilder.buildResponse(200, sb.toString());
         }
-        if (method.equals("POST")) {
-            Matcher matcher = GROUP_SEND_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = groupsend.matcher(path);
             if (matcher.matches()) {
                 String groupId = matcher.group(1);
-                String sender = extractField(body, "senderId");
-                String content = extractField(body, "content");
+                String sender = extractField(badane, "senderId");
+                String content = extractField(badane, "content");
                 if (sender.isEmpty() || content.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing senderId or content." + "\"}");
                 if (content.length() > 1000)
@@ -462,13 +459,13 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(200, "{\"messageId\":\"" + msgId + "\"}");
             }
         }
-        if (method.equals("POST")) {
-            Matcher matcher = GROUP_MESSAGE_EDIT_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = groupeditmess.matcher(path);
             if (matcher.matches()) {
                 String groupId = matcher.group(1);
-                String msgId = extractField(body, "messageId");
-                String newContent = extractField(body, "newContent");
-                String senderId = extractField(body, "senderId");
+                String msgId = extractField(badane, "messageId");
+                String newContent = extractField(badane, "newContent");
+                String senderId = extractField(badane, "senderId");
                 if (msgId.isEmpty() || newContent.isEmpty() || senderId.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId, newContent or senderId." + "\"}");
                 Group group = server.getGroupService().getGroupById(groupId);
@@ -492,12 +489,12 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("POST")) {
-            Matcher matcher = GROUP_MESSAGE_DELETE_PATTERN.matcher(path);
+        if (metod.equals("POST")) {
+            Matcher matcher = groupdelmess.matcher(path);
             if (matcher.matches()) {
                 String groupId = matcher.group(1);
-                String msgId = extractField(body, "messageId");
-                String senderId = extractField(body, "senderId");
+                String msgId = extractField(badane, "messageId");
+                String senderId = extractField(badane, "senderId");
                 if (msgId.isEmpty() || senderId.isEmpty())
                     return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing messageId or senderId." + "\"}");
                 Group group = server.getGroupService().getGroupById(groupId);
@@ -521,8 +518,8 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Message not found." + "\"}");
             }
         }
-        if (method.equals("GET")) {
-            Matcher matcher = GROUP_MESSAGES_PATTERN.matcher(path);
+        if (metod.equals("GET")) {
+            Matcher matcher = groupmess.matcher(path);
             if (matcher.matches()) {
                 String groupId = matcher.group(1);
                 Group group = server.getGroupService().getGroupById(groupId);
@@ -539,10 +536,10 @@ public class RequestRouter {
                 return ResponseBuilder.buildResponse(200, sb.toString());
             }
         }
-        if (method.equals("POST") && path.equals("/api/group/addmember")) {
-            String groupId = extractField(body, "groupId");
-            String requesterId = extractField(body, "requesterId");
-            String userId = extractField(body, "userId");
+        if (metod.equals("POST") && path.equals("/api/group/addmember")) {
+            String groupId = extractField(badane, "groupId");
+            String requesterId = extractField(badane, "requesterId");
+            String userId = extractField(badane, "userId");
             if (groupId.isEmpty() || requesterId.isEmpty() || userId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing parameters." + "\"}");
             Group group = server.getGroupService().getGroupById(groupId);
@@ -560,10 +557,10 @@ public class RequestRouter {
             }
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Member added.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/group/removemember")) {
-            String groupId = extractField(body, "groupId");
-            String requesterId = extractField(body, "requesterId");
-            String userId = extractField(body, "userId");
+        if (metod.equals("POST") && path.equals("/api/group/removemember")) {
+            String groupId = extractField(badane, "groupId");
+            String requesterId = extractField(badane, "requesterId");
+            String userId = extractField(badane, "userId");
             if (groupId.isEmpty() || requesterId.isEmpty() || userId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing parameters." + "\"}");
             Group group = server.getGroupService().getGroupById(groupId);
@@ -583,11 +580,11 @@ public class RequestRouter {
             }
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Member removed.\"}");
         }
-        if (method.equals("POST") && path.equals("/api/group/update")) {
-            String groupId = extractField(body, "groupId");
-            String requesterId = extractField(body, "requesterId");
-            String newGroupName = extractField(body, "groupName");
-            String newPic = extractField(body, "profilePicturePath");
+        if (metod.equals("POST") && path.equals("/api/group/update")) {
+            String groupId = extractField(badane, "groupId");
+            String requesterId = extractField(badane, "requesterId");
+            String newGroupName = extractField(badane, "groupName");
+            String newPic = extractField(badane, "profilePicturePath");
             if (groupId.isEmpty() || requesterId.isEmpty())
                 return ResponseBuilder.buildResponse(400, "{\"error\":\"" + "Missing groupId or requesterId." + "\"}");
             Group group = server.getGroupService().getGroupById(groupId);
@@ -598,7 +595,7 @@ public class RequestRouter {
             server.getGroupService().updateGroupInfo(groupId, newGroupName, newPic);
             return ResponseBuilder.buildResponse(200, "{\"message\":\"Group info updated.\"}");
         }
-        return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Endpoint not found: " + method + " " + path + "\"}");
+        return ResponseBuilder.buildResponse(404, "{\"error\":\"" + "Endpoint not found: " + metod + " " + path + "\"}");
     }
 
     private String chatToJson(Chat chat, String currentUserId) {
@@ -621,14 +618,14 @@ public class RequestRouter {
         sb.append("\"lastMessageTime\":").append(lastTime.isEmpty() ? "null" : "\"" + lastTime + "\"").append(",");
         sb.append("\"totalMessages\":").append(receivedMessages).append(",");
         User currentUser = server.getUserService().getUserById(currentUserId);
-        boolean isPinned = currentUser != null && currentUser.getPinnedChatIds().contains(chat.getChatId());
-        boolean isArchived = currentUser != null && currentUser.getArchivedChatIds().contains(chat.getChatId());
-        boolean isMuted = currentUser != null && currentUser.getMutedChatIds().contains(chat.getChatId());
+        boolean isPinned = currentUser != null && currentUser.getPinChat().contains(chat.getChatId());
+        boolean isArchived = currentUser != null && currentUser.getArchiveChat().contains(chat.getChatId());
+        boolean isMuted = currentUser != null && currentUser.getMuteChat().contains(chat.getChatId());
         sb.append("\"isPinned\":").append(isPinned).append(",");
         sb.append("\"isArchived\":").append(isArchived).append(",");
         sb.append("\"isMuted\":").append(isMuted).append(",");
         sb.append("\"participantIds\":[");
-        ArrayList<String> parts = chat.getParticipants();
+        ArrayList<String> parts = chat.getUsers();
         for (int i = 0; i < parts.size(); i++) {
             if (i > 0)
                 sb.append(",");
@@ -647,14 +644,14 @@ public class RequestRouter {
         String lastTime = lastMsg != null ? String.valueOf(lastMsg.getTimestamp()) : "";
         StringBuilder sb = new StringBuilder("{");
         sb.append("\"id\":\"").append(group.getGroupId()).append("\",");
-        sb.append("\"name\":\"").append(group.getGroupName()).append("\",");
+        sb.append("\"name\":\"").append(group.getName()).append("\",");
         sb.append("\"lastMessageContent\":\"").append(lastContent).append("\",");
         sb.append("\"lastMessageTime\":").append(lastTime.isEmpty() ? "null" : "\"" + lastTime + "\"").append(",");
         sb.append("\"lastMessageTime\":").append(lastTime.isEmpty() ? "null" : "\"" + lastTime + "\"").append(",");
         User currentUser = server.getUserService().getUserById(currentUserId);
-        boolean isPinned = currentUser != null && currentUser.getPinnedChatIds().contains(group.getGroupId());
-        boolean isArchived = currentUser != null && currentUser.getArchivedChatIds().contains(group.getGroupId());
-        boolean isMuted = currentUser != null && currentUser.getMutedChatIds().contains(group.getGroupId());
+        boolean isPinned = currentUser != null && currentUser.getPinChat().contains(group.getGroupId());
+        boolean isArchived = currentUser != null && currentUser.getArchiveChat().contains(group.getGroupId());
+        boolean isMuted = currentUser != null && currentUser.getMuteChat().contains(group.getGroupId());
         sb.append("\"isPinned\":").append(isPinned).append(",");
         sb.append("\"isArchived\":").append(isArchived).append(",");
         sb.append("\"isMuted\":").append(isMuted).append(",");
