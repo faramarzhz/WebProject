@@ -1,51 +1,29 @@
 package network;
 
 public class ResponseBuilder {
-    public static String buildResponse(int statusCode, String jsonBody) {
-        String statusText = getStatusText(statusCode);
-        byte[] bodyBytes = jsonBody.getBytes();
-        return "HTTP/1.1 " + statusCode + " " + statusText + "\r\n" +
-                "Content-Type: application/json; charset=UTF-8\r\n" +
-                "Content-Length: " + bodyBytes.length + "\r\n" +
-                "Connection: close\r\n" +
-                "\r\n" +
-                jsonBody;
-    }
-
-    public static String ok(String jsonBody) {
-        return buildResponse(200, jsonBody);
-    }
-
-    public static String created(String jsonBody) {
-        return buildResponse(201, jsonBody);
-    }
-
-    public static String error(int code, String message) {
-        return buildResponse(code, "{\"error\":\"" + message + "\"}");
-    }
-
-    private static String getStatusText(int code) {
-        switch (code) {
-            case 200:
-                return "OK";
-            case 201:
-                return "Created";
-            case 204:
-                return "No Content";
-            case 400:
-                return "Bad Request";
-            case 401:
-                return "Unauthorized";
-            case 403:
-                return "Forbidden";
-            case 404:
-                return "Not Found";
-            case 409:
-                return "Conflict";
-            case 429:
-                return "Too Many Requests";
-            default:
-                return "Internal Server Error";
-        }
+    public static String buildResponse(int code, String badanePayam) {
+        String status = "";
+        if (code == 200)
+            status = "OK";
+        else if (code == 201)
+            status = "Created";
+        else if (code == 204)
+            status = "No Content";
+        else if (code == 400)
+            status = "Bad Request";
+        else if (code == 401)
+            status = "Unauthorized";
+        else if (code == 403)
+            status = "Forbidden";
+        else if (code == 404)
+            status = "Not Found";
+        else if (code == 409)
+            status = "Conflict";
+        else if (code == 429)
+            status = "Too Many Requests";
+        else
+            status = "Internal Server Error";
+        byte[] bytebadane = badanePayam.getBytes();
+        return "HTTP/1.1 "+code+" "+status+"\r\n"+"Content-Type: application/json; charset=UTF-8\r\n"+"Content-Length: "+bytebadane.length+"\r\n"+"Connection: close\r\n"+"\r\n"+badanePayam;
     }
 }

@@ -7,8 +7,8 @@ import database.Database;
 import java.util.HashMap;
 
 public class MessageService {
-    private HashMap<String, Long> userWindowStart = new HashMap<>();
-    private HashMap<String, Integer> userMessageCount = new HashMap<>();
+    private HashMap<String, Long> window = new HashMap<>();
+    private HashMap<String, Integer> messageCount = new HashMap<>();
 
     public Message createMessage(String messageId, String senderId, String content, String mediaPath) {
         if (isSpam(senderId))
@@ -23,46 +23,60 @@ public class MessageService {
         }
     }
 
-    public void addMessageToGroup(Group group, Message message) {
-        if (group != null && message != null) {
-            group.getMessages().add(message);
-            Database.saveMessages(group.getGroupId(), group.getMessages());
+    private boolean isSpam(String senderId) {
+        long now = System.currentTimeMillis();
+        Long startVal = window.get(senderId);
+        long start = (startVal != null) ? startVal : 0L;
+        if (now - start > 1000) {
+            window.put(senderId, now);
+            messageCount.put(senderId, 1);
+            return false;
+        } 
+        else {
+            Integer countVal = messageCount.get(senderId);
+            int count = ((countVal != null) ? countVal : 0) + 1;
+            messageCount.put(senderId, count);
+            return count > 5;
+        }
+    }
+    
+    public void addMessageToGroup(Group grop, Message message) {
+        if (grop != null && message != null) {
+            grop.getMessages().add(message);
+            Database.saveMessages(grop.getGroupId(), grop.getMessages());
         }
     }
 
     public void editMessage(Chat chat, Message message, String newContent) {
         if (message != null && !message.isDeleted()) {
-            message.recordEditBeforeChange();
+            message.oldtext();
             message.setContent(newContent);
             message.setEdited(true);
             Database.saveMessages(chat.getChatId(), chat.getMessages());
         }
     }
-
-    public void editMessageInGroup(Group group, Message message, String newContent) {
+    public void editMessageInGroup(Group grop, Message message, String newContent) {
         if (message != null && !message.isDeleted()) {
-            message.recordEditBeforeChange();
+            message.oldtext();
             message.setContent(newContent);
             message.setEdited(true);
-            Database.saveMessages(group.getGroupId(), group.getMessages());
+            Database.saveMessages(grop.getGroupId(), grop.getMessages());
         }
     }
-
     public void deleteMessage(Chat chat, Message message) {
         if (message != null) {
-            message.recordEditBeforeChange();
+            message.oldtext();
             message.setContent("This message was deleted.");
             message.setDeleted(true);
             Database.saveMessages(chat.getChatId(), chat.getMessages());
         }
     }
-
-    public void deleteMessageInGroup(Group group, Message message) {
+    public void deleteMessageInGroup(Group grop, Message message) {
         if (message != null) {
-            message.recordEditBeforeChange();
+            message.oldtext();
             message.setContent("This message was deleted.");
             message.setDeleted(true);
-            Database.saveMessages(group.getGroupId(), group.getMessages());
+            Database.saveMessages(grop.getGroupId(), grop.getMessages());
         }
     }
 
@@ -70,35 +84,6 @@ public class MessageService {
         if (message != null) {
             message.setReported(true);
             Database.saveMessages(chat.getChatId(), chat.getMessages());
-        }
-    }
-
-    public void reactToMessage(Chat chat, Message message, String userId, String emoji) {
-        if (message != null) {
-            message.addReaction(userId, emoji);
-            Database.saveMessages(chat.getChatId(), chat.getMessages());
-        }
-    }
-
-    public void removeReaction(Chat chat, Message message, String userId) {
-        if (message != null) {
-            message.removeReaction(userId);
-            Database.saveMessages(chat.getChatId(), chat.getMessages());
-        }
-    }
-
-    private boolean isSpam(String senderId) {
-        long now = System.currentTimeMillis();
-        long windowStart = userWindowStart.getOrDefault(senderId, 0L);
-
-        if (now - windowStart > 1000) {
-            userWindowStart.put(senderId, now);
-            userMessageCount.put(senderId, 1);
-            return false;
-        } else {
-            int count = userMessageCount.getOrDefault(senderId, 0) + 1;
-            userMessageCount.put(senderId, count);
-            return count > 5;
         }
     }
 }

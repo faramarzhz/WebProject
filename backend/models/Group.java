@@ -1,22 +1,20 @@
 package models;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 
 public class Group {
     private String groupId;
-    private String groupName;
-    private String profilePicturePath; // برای فاز دو
-    private HashSet<String> members; // هش‌ست برای سرعت بالا و تکراری نبودن
-    private ArrayList<Message> messages;// ارای لیست بخاطر حفظ کردن ترتیب
-
+    private String name;
+    private String profilePath; 
+    private HashSet<String> members; 
+    private ArrayList<Message> messages;
     private String creatorId; 
     private HashSet<String> adminIds;
 
     public Group(String groupId, String groupName, String creatorId) {
         this.groupId = groupId;
-        this.groupName = groupName;
-        profilePicturePath = "";
+        this.name = groupName;
+        profilePath = "";
         members = new HashSet<>();
         messages = new ArrayList<>();
         this.creatorId = creatorId;
@@ -24,25 +22,24 @@ public class Group {
         adminIds.add(creatorId);
     }
 
-    // Getters and Setters
     public String getGroupId() {
         return groupId;
     }
 
-    public String getGroupName() {
-        return groupName;
+    public String getName() {
+        return name;
     }
 
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
+    public void setName(String groupName) {
+        this.name = groupName;
     }
 
-    public String getProfilePicturePath() {
-        return profilePicturePath;
+    public String getProfilePath() {
+        return profilePath;
     }
 
-    public void setProfilePicturePath(String profilePicturePath) {
-        this.profilePicturePath = profilePicturePath;
+    public void setProfilePath(String profilePicturePath) {
+        this.profilePath = profilePicturePath;
     }
 
     public HashSet<String> getMembers() {
@@ -70,8 +67,7 @@ public class Group {
     }
 
     public void removeAdmin(String userId) {
-        if (!userId.equals(creatorId)) {
+        if (!userId.equals(creatorId))
             adminIds.remove(userId);
-        }
     }
 }

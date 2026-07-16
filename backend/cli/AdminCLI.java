@@ -1,5 +1,4 @@
 package cli;
-
 import models.Chat;
 import models.Group;
 import models.Message;
@@ -13,11 +12,10 @@ import java.util.regex.Pattern;
 public class AdminCLI {
     private Server server;
     private Scanner scanner;
-    // الگوهای رجکس برای بررسی ولیدیشن پسورد
-    private static final Pattern UPPERCASE_PATTERN = Pattern.compile("[A-Z]");
-    private static final Pattern LOWERCASE_PATTERN = Pattern.compile("[a-z]");
-    private static final Pattern DIGIT_PATTERN = Pattern.compile("[0-9]");
-    private static final Pattern SPECIAL_CHAR_PATTERN = Pattern.compile("[!@#$%^&*]");
+    private Pattern uppCase = Pattern.compile("[A-Z]");
+    private Pattern lowCase = Pattern.compile("[a-z]");
+    private Pattern adad = Pattern.compile("[0-9]");
+    private Pattern ch = Pattern.compile("[!@#$%^&*]");
 
     public AdminCLI(Server server) {
         this.server = server;
@@ -25,44 +23,40 @@ public class AdminCLI {
     }
 
     public void start() {
-        System.out.print("\nEnter Admin Username: ");
-        String username = scanner.nextLine().trim();
-        System.out.print("Enter Admin Password: ");
-        String password = scanner.nextLine().trim();
-
-        if (username.equals("admin") && password.equals("adminpass")) {
+        System.out.println();
+        System.out.println("Enter Admin Username: ");
+        String username = scanner.nextLine();
+        System.out.println("Enter Admin Password: ");
+        String password = scanner.nextLine();
+        if (username.equals("faramarz") && password.equals("faramarz07")) {
             System.out.println("Admin authenticated.");
             showHelp();
             runCLI();
-        } else {
-            System.out.println("Invalid admin credentials.");
-        }
+        } 
+        else
+        System.out.println("Invalid admin credentials.");
     }
 
     private void showHelp() {
-        System.out.println("         Admin CLI - Commands           ");
-        System.out.println("");
-        System.out.println("  listusers              - List all users");
-        System.out.println("  adduser                - Add a new user");
-        System.out.println("  deleteuser <userId>    - Delete a user");
-        System.out.println("  listgroups             - List all groups");
-        System.out.println("  addgroup               - Add a new group");
-        System.out.println("  deletegroup <groupId>  - Delete a group");
-        System.out.println("  addmember <groupId>    - Add member to group");
-        System.out.println("  removemember <groupId> - Remove member from group");
-        System.out.println("  reports                - Show reported messages");
-        System.out.println("  help                   - Show this help");
-        System.out.println("  exit                   - Exit admin panel");
+        System.out.println("cli commands");
+        System.out.println();
+        System.out.println("listusers");
+        System.out.println("adduser");
+        System.out.println("deleteuser");
+        System.out.println("listgroups");
+        System.out.println("addgroup");
+        System.out.println("deletegroup");
+        System.out.println("addmember");
+        System.out.println("removemember");
+        System.out.println("reports");
+        System.out.println("help");
+        System.out.println("exit");
     }
-
     private void runCLI() {
         while (true) {
-            System.out.print("\nadmin> ");
-            String input = scanner.nextLine().trim().toLowerCase();
-            String[] parts = input.split("\\s+", 2);
-            String command = parts[0];
-            String arg = parts.length > 1 ? parts[1] : "";
-
+            System.out.println();
+            System.out.print("admin> ");
+            String command = scanner.nextLine();
             switch (command) {
                 case "listusers":
                     listUsers();
@@ -71,7 +65,7 @@ public class AdminCLI {
                     addUser();
                     break;
                 case "deleteuser":
-                    deleteUser(arg);
+                    deleteUser();
                     break;
                 case "listgroups":
                     listGroups();
@@ -80,13 +74,13 @@ public class AdminCLI {
                     addGroup();
                     break;
                 case "deletegroup":
-                    deleteGroup(arg);
+                    deleteGroup();
                     break;
                 case "addmember":
-                    addMember(arg);
+                    addMember();
                     break;
                 case "removemember":
-                    removeMember(arg);
+                    removeMember();
                     break;
                 case "reports":
                     showReports();
@@ -103,31 +97,39 @@ public class AdminCLI {
         }
     }
 
-
-    // User Commands
+    private void deleteUser() {
+        System.out.print("User ID to delete: ");
+        String userId = scanner.nextLine();
+        HashMap<String, User> users = server.getUsers();
+        if (users.remove(userId) != null) {
+            System.out.println("User deleted: " + userId);
+        } else {
+            System.out.println("User not found.");
+        }
+    }
     private void listUsers() {
         HashMap<String, User> users = server.getUsers();
         if (users.isEmpty()) {
             System.out.println("No users registered.");
             return;
         }
-        System.out.println("\n[Users]");
-        for (User u : users.values()) {
-            System.out.println("  ID: " + u.getUserId() +
-                    " | Username: " + u.getUsername() +
-                    (u.isBlocked() ? " | [BLOCKED]" : ""));
+        System.out.println();
+        System.out.println("Users:");
+        for (User user : users.values()) {
+            String status = "";
+            if(user.isBlocked())
+            status = " | [BLOCKED]";
+            System.out.println("  ID: " + user.getUserId() + " | Username: " + user.getUsername() + status);
         }
     }
-
     private void addUser() {
         HashMap<String, User> users = server.getUsers();
         System.out.print("User ID: ");
-        String id = scanner.nextLine().trim();
+        String id = scanner.nextLine();
         System.out.print("Username: ");
-        String name = scanner.nextLine().trim();
+        String name = scanner.nextLine();
         System.out.print("Password: ");
-        String pass = scanner.nextLine().trim();
-
+        String pass = scanner.nextLine();
         if (id.isEmpty() || name.isEmpty() || pass.isEmpty()) {
             System.out.println("All fields are required.");
             return;
@@ -136,20 +138,19 @@ public class AdminCLI {
             System.out.println("User ID already exists.");
             return;
         }
-
-        if (!UPPERCASE_PATTERN.matcher(pass).find()) {
+        if (!uppCase.matcher(pass).find()) {
             System.out.println("Password must contain at least one uppercase letter.");
             return;
         }
-        if (!LOWERCASE_PATTERN.matcher(pass).find()) {
+        if (!lowCase.matcher(pass).find()) {
             System.out.println("Password must contain at least one lowercase letter.");
             return;
         }
-        if (!DIGIT_PATTERN.matcher(pass).find()) {
+        if (!adad.matcher(pass).find()) {
             System.out.println("Password must contain at least one digit.");
             return;
         }
-        if (!SPECIAL_CHAR_PATTERN.matcher(pass).find()) {
+        if (!ch.matcher(pass).find()) {
             System.out.println("Password must contain at least one special character (!@#$%^&*).");
             return;
         }
@@ -157,87 +158,13 @@ public class AdminCLI {
             System.out.println("Password cannot contain the username.");
             return;
         }
-
         users.put(id, new User(name, PasswordEncryptor.hashPassword(pass), id));
         System.out.println("User added: " + id);
     }
 
-    private void deleteUser(String userId) {
-        if (userId.isEmpty()) {
-            System.out.print("User ID to delete: ");
-            userId = scanner.nextLine().trim();
-        }
-        HashMap<String, User> users = server.getUsers();
-        if (users.remove(userId) != null) {
-            System.out.println("User deleted: " + userId);
-        } else {
-            System.out.println("User not found.");
-        }
-    }
-
-
-    // Group Commands
-    private void listGroups() {
-        HashMap<String, Group> groups = server.getGroups();
-        if (groups.isEmpty()) {
-            System.out.println("No groups yet.");
-            return;
-        }
-        System.out.println("\n[Groups]");
-        for (Group g : groups.values()) {
-            System.out.println("  ID: " + g.getGroupId() +
-                    " | Name: " + g.getGroupName() +
-                    " | Members: " + g.getMembers().size());
-            System.out.println("    Members: " + g.getMembers());
-        }
-    }
-
-    private void addGroup() {
-        HashMap<String, Group> groups = server.getGroups();
+    private void addMember() {
         System.out.print("Group ID: ");
-        String gid = scanner.nextLine().trim();
-        System.out.print("Group Name: ");
-        String gname = scanner.nextLine().trim();
-        System.out.print("Creator User ID: ");
-        String creatorId = scanner.nextLine().trim();
-
-        if (gid.isEmpty() || gname.isEmpty() || creatorId.isEmpty()) {
-            System.out.println("All fields are required.");
-            return;
-        }
-        if (groups.containsKey(gid)) {
-            System.out.println("Group ID already exists.");
-            return;
-        }
-        if (!server.getUsers().containsKey(creatorId)) {
-            System.out.println("Creator user '" + creatorId + "' does not exist.");
-            return;
-        }
-
-        Group newGroup = new Group(gid, gname, creatorId);
-        newGroup.getMembers().add(creatorId);
-        groups.put(gid, newGroup);
-        System.out.println("Group created: " + gid);
-    }
-
-    private void deleteGroup(String groupId) {
-        if (groupId.isEmpty()) {
-            System.out.print("Group ID to delete: ");
-            groupId = scanner.nextLine().trim();
-        }
-        HashMap<String, Group> groups = server.getGroups();
-        if (groups.remove(groupId) != null) {
-            System.out.println("Group deleted.");
-        } else {
-            System.out.println("Group not found.");
-        }
-    }
-
-    private void addMember(String groupId) {
-        if (groupId.isEmpty()) {
-            System.out.print("Group ID: ");
-            groupId = scanner.nextLine().trim();
-        }
+        String groupId = scanner.nextLine();
         if (groupId.isEmpty()) {
             System.out.println("Group ID cannot be empty.");
             return;
@@ -249,7 +176,7 @@ public class AdminCLI {
             return;
         }
         System.out.print("User ID to add: ");
-        String uid = scanner.nextLine().trim();
+        String uid = scanner.nextLine();
         if (uid.isEmpty()) {
             System.out.println("User ID cannot be empty.");
             return;
@@ -265,12 +192,9 @@ public class AdminCLI {
         g.getMembers().add(uid);
         System.out.println("Member added.");
     }
-
-    private void removeMember(String groupId) {
-        if (groupId.isEmpty()) {
-            System.out.print("Group ID: ");
-            groupId = scanner.nextLine().trim();
-        }
+    private void removeMember() {
+        System.out.print("Group ID: ");
+        String groupId = scanner.nextLine();
         if (groupId.isEmpty()) {
             System.out.println("Group ID cannot be empty.");
             return;
@@ -282,7 +206,7 @@ public class AdminCLI {
             return;
         }
         System.out.print("User ID to remove: ");
-        String uid = scanner.nextLine().trim();
+        String uid = scanner.nextLine();
         if (uid.isEmpty()) {
             System.out.println("User ID cannot be empty.");
             return;
@@ -298,20 +222,69 @@ public class AdminCLI {
         }
     }
 
-    // Reports
+    private void listGroups() {
+        HashMap<String, Group> groups = server.getGroups();
+        if (groups.isEmpty()) {
+            System.out.println("No groups yet.");
+            return;
+        }
+        System.out.println();
+        System.out.println("[Groups]");
+        for (Group g : groups.values()) {
+            System.out.println("  ID: " + g.getGroupId() +
+                    " | Name: " + g.getName() +
+                    " | Members: " + g.getMembers().size());
+            System.out.println("    Members: " + g.getMembers());
+        }
+    }
+
+    private void addGroup() {
+        HashMap<String, Group> groups = server.getGroups();
+        System.out.print("Group ID: ");
+        String gid = scanner.nextLine();
+        System.out.print("Group Name: ");
+        String gname = scanner.nextLine();
+        System.out.print("Creator User ID: ");
+        String creatorId = scanner.nextLine();
+        if (gid.isEmpty() || gname.isEmpty() || creatorId.isEmpty()) {
+            System.out.println("All fields are required.");
+            return;
+        }
+        if (groups.containsKey(gid)) {
+            System.out.println("Group ID already exists.");
+            return;
+        }
+        if (!server.getUsers().containsKey(creatorId)) {
+            System.out.println("Creator user '" + creatorId + "' does not exist.");
+            return;
+        }
+        Group newGroup = new Group(gid, gname, creatorId);
+        newGroup.getMembers().add(creatorId);
+        groups.put(gid, newGroup);
+        System.out.println("Group created: " + gid);
+    }
+
+    private void deleteGroup() {
+        System.out.print("Group ID to delete: ");
+        String groupId = scanner.nextLine();
+        HashMap<String, Group> groups = server.getGroups();
+        if (groups.remove(groupId) != null)
+            System.out.println("Group deleted.");
+        else
+        System.out.println("Group not found.");    
+    }
+
     private void showReports() {
         HashMap<String, Chat> chats = server.getChats();
         HashMap<String, Group> groups = server.getGroups();
         boolean found = false;
-
-        System.out.println("\n─── Reported Messages ───");
+        System.out.println();
+        System.out.println("Reported Messages");
         System.out.println("[Private Chats]");
         for (Chat chat : chats.values()) {
             for (Message msg : chat.getMessages()) {
                 if (msg.isReported()) {
-                    System.out.println("  Chat: " + chat.getChatId() +
-                            " | Sender: " + msg.getSenderId() +
-                            " | Content: " + msg.getContent());
+                    System.out.println("  Chat: " + chat.getChatId() + " | Sender: " + msg.getSenderId() + " | Content: " + msg.getContent());
                     found = true;
                 }
             }
@@ -320,9 +293,7 @@ public class AdminCLI {
         for (Group group : groups.values()) {
             for (Message msg : group.getMessages()) {
                 if (msg.isReported()) {
-                    System.out.println("  Group: " + group.getGroupName() +
-                            " | Sender: " + msg.getSenderId() +
-                            " | Content: " + msg.getContent());
+                    System.out.println("  Group: " + group.getName() + " | Sender: " + msg.getSenderId() + " | Content: " + msg.getContent());
                     found = true;
                 }
             }

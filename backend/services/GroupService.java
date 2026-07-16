@@ -1,5 +1,4 @@
 package services;
-
 import models.Group;
 import models.Message;
 import database.Database;
@@ -11,43 +10,67 @@ public class GroupService {
 
     public GroupService() {
         groups = Database.loadGroups();
-        for (Group group : groups.values()) {
-            ArrayList<Message> messages = Database.loadMessages(group.getGroupId());
-            group.getMessages().addAll(messages);
+        for (Group grop : groups.values()) {
+            ArrayList<Message> messages = Database.loadMessages(grop.getGroupId());
+            grop.getMessages().addAll(messages);
         }
     }
 
-    public Group createGroup(String groupId, String groupName, String creatorId) {
-        Group newGroup = new Group(groupId, groupName, creatorId);
-        newGroup.getMembers().add(creatorId);
-        groups.put(groupId, newGroup);
-        Database.saveGroups(groups);
-        return newGroup;
+    public boolean isGroupAdmin(String groupId, String userId) {
+        Group grop = groups.get(groupId);
+        if (grop == null)
+            return false;
+        return grop.isAdmin(userId);
     }
 
-    public void addMember(String groupId, String userId) {
-        Group group = groups.get(groupId);
-        if (group != null) {
-            group.getMembers().add(userId);
+    public void removeMember(String groupId, String userId) {
+        Group grop = groups.get(groupId);
+        if (grop != null) {
+            grop.getMembers().remove(userId);
             Database.saveGroups(groups);
         }
     }
 
-    public void removeMember(String groupId, String userId) {
-        Group group = groups.get(groupId);
-        if (group != null) {
-            group.getMembers().remove(userId);
+    public void addAdmin(String groupId, String userId) {
+        Group grop = groups.get(groupId);
+        if (grop != null) {
+            grop.addAdmin(userId);
             Database.saveGroups(groups);
         }
     }
 
     public void updateGroupInfo(String groupId, String newGroupName, String newPic) {
-        Group group = groups.get(groupId);
-        if (group != null) {
-            if (newGroupName != null && !newGroupName.isEmpty())
-                group.setGroupName(newGroupName);
+        Group grop = groups.get(groupId);
+        if (grop != null) {
             if (newPic != null)
-                group.setProfilePicturePath(newPic);
+                grop.setProfilePath(newPic);
+            if (newGroupName != null && !newGroupName.isEmpty())
+                grop.setName(newGroupName);
+            Database.saveGroups(groups);
+        }
+    }
+
+    public Group createGroup(String groupId, String groupName, String creatorId) {
+        Group newgrop = new Group(groupId, groupName, creatorId);
+        newgrop.getMembers().add(creatorId);
+        groups.put(groupId, newgrop);
+        Database.saveGroups(groups);
+        return newgrop;
+    }
+
+    public ArrayList<Group> getGroupsForUser(String userId) {
+        ArrayList<Group> result = new ArrayList<>();
+        for (Group grop : groups.values()) {
+            if (grop.getMembers().contains(userId))
+                result.add(grop);
+        }
+        return result;
+    }
+
+    public void removeAdmin(String groupId, String userId) {
+        Group grop = groups.get(groupId);
+        if (grop != null) {
+            grop.removeAdmin(userId);
             Database.saveGroups(groups);
         }
     }
@@ -56,39 +79,15 @@ public class GroupService {
         return groups.get(groupId);
     }
 
+    public void addMember(String groupId, String userId) {
+        Group grop = groups.get(groupId);
+        if (grop != null) {
+            grop.getMembers().add(userId);
+            Database.saveGroups(groups);
+        }
+    }
+
     public HashMap<String, Group> getAllGroups() {
         return groups;
-    }
-
-    public ArrayList<Group> getGroupsForUser(String userId) {
-        ArrayList<Group> result = new ArrayList<>();
-        for (Group g : groups.values()) {
-            if (g.getMembers().contains(userId))
-                result.add(g);
-        }
-        return result;
-    }
-
-    public boolean isGroupAdmin(String groupId, String userId) {
-        Group group = groups.get(groupId);
-        if (group == null)
-            return false;
-        return group.isAdmin(userId);
-    }
-
-    public void addAdmin(String groupId, String userId) {
-        Group group = groups.get(groupId);
-        if (group != null) {
-            group.addAdmin(userId);
-            Database.saveGroups(groups);
-        }
-    }
-
-    public void removeAdmin(String groupId, String userId) {
-        Group group = groups.get(groupId);
-        if (group != null) {
-            group.removeAdmin(userId);
-            Database.saveGroups(groups);
-        }
     }
 }

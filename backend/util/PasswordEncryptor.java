@@ -4,14 +4,13 @@ public class PasswordEncryptor {
     public static String hashPassword(String password) {
         if (password == null)
             return "";
-
-        String orhinalChar = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-        String fakeChar = "zxywutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA9876543210*&^%$#@!";
+        String orhi = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        String fake = "zxywutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA9876543210*&^%$#@!";
         String result = "";
         for (int i = 0; i < password.length(); i++) {
             char ch = password.charAt(i);
-            int index = orhinalChar.indexOf(ch);
-            result += fakeChar.charAt(index);
+            int index = orhi.indexOf(ch);
+            result += fake.charAt(index);
         }
         return result;
     }

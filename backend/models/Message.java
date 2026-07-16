@@ -1,5 +1,4 @@
 package models;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -7,14 +6,13 @@ public class Message {
     private String messageId;
     private String senderId;
     private String content;
-    private long timestamp;// زمان ارسال پیام
+    private long timestamp;
     private boolean isEdited;
     private boolean isDeleted;
     private String mediaPath;
     private boolean isReported;
-
-    private ArrayList<MessageEdit> editHistory; // تاریخچه‌ی نسخه‌های قبلی پیام (قبل از هر ویرایش یا حذف)
-    private LinkedHashMap<String, String> reactions; // نگاشت userId به ایموجی ری‌اکشن LinkedHashMap برای حفظ ترتیب ثبت
+    private ArrayList<MessageEdit> editHistory; 
+    private LinkedHashMap<String, String> reactions; 
 
     public Message(String messageId, String senderId, String content, String mediaPath) {
         this.messageId = messageId;
@@ -29,7 +27,6 @@ public class Message {
         reactions = new LinkedHashMap<>();
     }
 
-    // Getters and Setters
     public String getMessageId() {
         return messageId;
     }
@@ -86,7 +83,7 @@ public class Message {
         this.isReported = isReported;
     }
 
-    public void recordEditBeforeChange() {
+    public void oldtext() {
         editHistory.add(new MessageEdit(this.content));
     }
 
