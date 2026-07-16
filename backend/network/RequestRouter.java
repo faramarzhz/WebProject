@@ -634,7 +634,6 @@ public class RequestRouter {
         sb.append("]}");
         return sb.toString();
     }
-
     private String groupToJson(Group group, String currentUserId) {
         Message lastMsg = null;
         ArrayList<Message> msgs = group.getMessages();
