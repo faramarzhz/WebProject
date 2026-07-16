@@ -42,6 +42,10 @@ public class WebSocketHandler {
             System.err.println("WebSocket connection closed");
         } finally {
             server.getActiveConnections().remove(userId);
+            models.User user = server.getUserService().getUserById(userId);
+            if (user != null) {
+                user.setLastSeen(System.currentTimeMillis());
+            }
             try {
                 socket.close();
             } catch (IOException e) {
@@ -103,7 +107,18 @@ public class WebSocketHandler {
         byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
         int length = messageBytes.length;
         out.write(129);
-        out.write(length);
+        if (length <= 125) {
+            out.write(length);
+        } else if (length <= 65535) {
+            out.write(126);
+            out.write((length >> 8) & 0xFF);
+            out.write(length & 0xFF);
+        } else {
+            out.write(127);
+            for (int i = 7; i >= 0; i--) {
+                out.write((int) ((length >> (8 * i)) & 0xFF));
+            }
+        }
         out.write(messageBytes);
         out.flush();
     }
