@@ -824,5 +824,5 @@ function closeChatInfo(){
 window.addEventListener("click", function(event){
     const modal = document.getElementById("chat-info-modal");
     if(modal && event.target === modal) closeChatInfo();
-    document.querySelectorAll(".reaction-picker.open").forEach(function(p){ p.classList.remove("open"); });
+    document.querySelectorAll(".reaction-picker.open").forEach(function(p){ p.classList.remove("open");});
 });

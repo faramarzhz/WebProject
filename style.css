@@ -23,6 +23,7 @@ body {
     flex-direction: column;
     gap: 12px;
 }
+
 h1 {
     color: #00ff66;
     text-align: center;
