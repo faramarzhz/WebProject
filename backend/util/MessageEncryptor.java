@@ -1,12 +1,12 @@
 package util;
 
 public class MessageEncryptor {
-    private static int shiftAmount = 5;
+    private static int shift = 5;
     public static String encrypt(String content) {
         String result = "";
         for (int i = 0; i < content.length(); i++) {
             char ch = content.charAt(i);
-            int newCode = (int) ch + shiftAmount;
+            int newCode = (int) ch + 5;
             result += (char) newCode;
         }
         return result;
@@ -15,7 +15,7 @@ public class MessageEncryptor {
         String result = "";
         for (int i = 0; i < encryptContent.length(); i++) {
             char ch = encryptContent.charAt(i);
-            int newCode = (int) ch - shiftAmount;
+            int newCode = (int) ch - shift;
             result += (char) newCode;
         }
         return result;
