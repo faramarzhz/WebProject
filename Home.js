@@ -66,6 +66,9 @@ function loadAllChats(userId){
                 lastMessageContent: g.lastMessageContent,
                 lastMessageTime:    g.lastMessageTime,
                 totalMessages:      0,
+                isPinned:           g.isPinned,
+                isArchived:         g.isArchived,
+                isMuted:            g.isMuted,
                 participantIds:     g.memberIds || []
             };
         });
@@ -85,16 +88,14 @@ function renderChats(chats){
     if(!container) return;
     container.innerHTML = "";
     const currentUserId = localStorage.getItem("currentUserId");
-    const archivedIds   = JSON.parse(localStorage.getItem("archivedChats") || "[]");
-    const pinnedIds     = JSON.parse(localStorage.getItem("pinnedChats")   || "[]");
-    const activeChats = chats.filter(function(c){ return c && c.id && !archivedIds.includes(c.id); });
+    const activeChats = chats.filter(function(c){ return c && c.id && !c.isArchived; });
     activeChats.sort(function(a, b){
         const timeA = a.lastMessageTime ? parseInt(a.lastMessageTime) : 0;
         const timeB = b.lastMessageTime ? parseInt(b.lastMessageTime) : 0;
         return timeB - timeA;
     });
-    const pinnedChats   = activeChats.filter(function(c){ return  pinnedIds.includes(c.id); });
-    const unpinnedChats = activeChats.filter(function(c){ return !pinnedIds.includes(c.id); });
+    const pinnedChats   = activeChats.filter(function(c){ return  c.isPinned; });
+    const unpinnedChats = activeChats.filter(function(c){ return !c.isPinned; });
     const sortedChats   = pinnedChats.concat(unpinnedChats);
     if(sortedChats.length === 0 && chats.length === 0){
         const empty = document.createElement("p");
@@ -102,8 +103,8 @@ function renderChats(chats){
         empty.textContent = "No chats yet. Start a new conversation!";
         container.appendChild(empty);
     }
-    sortedChats.forEach(function(chat){ renderChatItem(container, chat, currentUserId, archivedIds, false); });
-    const archivedChats = chats.filter(function(c){ return c && c.id && archivedIds.includes(c.id); });
+    sortedChats.forEach(function(chat){ renderChatItem(container, chat, currentUserId, false); });
+    const archivedChats = chats.filter(function(c){ return c && c.id && c.isArchived; });
     archivedChats.sort(function(a, b){
         const timeA = a.lastMessageTime ? parseInt(a.lastMessageTime) : 0;
         const timeB = b.lastMessageTime ? parseInt(b.lastMessageTime) : 0;
@@ -121,11 +122,11 @@ function renderChats(chats){
         const archiveList = document.createElement("div");
         archiveList.id = "archive-list";
         archiveList.style.display = "none";
-        archivedChats.forEach(function(chat){ renderChatItem(archiveList, chat, currentUserId, archivedIds, true); });
+        archivedChats.forEach(function(chat){ renderChatItem(archiveList, chat, currentUserId, true); });
         container.appendChild(archiveList);
     }
 }
-function renderChatItem(container, chat, currentUserId, archivedIds, isArchived){
+function renderChatItem(container, chat, currentUserId, isArchived){
     const savedChatId = localStorage.getItem("savedMessagesChatId");
     let chatName     = "Unknown Chat";
     let avatarLetter = "?";
@@ -147,8 +148,7 @@ function renderChatItem(container, chat, currentUserId, archivedIds, isArchived)
     const totalMessages = chat.totalMessages || 0;
     const unreadCount   = Math.max(0, totalMessages - lastSeen);
     const badge         = unreadCount > 0 ? '<span class="badge">' + unreadCount + '</span>' : "";
-    const pinnedIds = JSON.parse(localStorage.getItem("pinnedChats") || "[]");
-    const isPinned  = pinnedIds.includes(chat.id);
+    const isPinned = !!chat.isPinned;
     const item = document.createElement("div");
     item.className      = "chat-item";
     item.style.position = "relative";
@@ -190,24 +190,26 @@ function renderChatItem(container, chat, currentUserId, archivedIds, isArchived)
     container.appendChild(item);
 }
 function togglePin(chatId, isPinned){
-    let pinnedIds = JSON.parse(localStorage.getItem("pinnedChats") || "[]");
-    if(isPinned){
-        pinnedIds = pinnedIds.filter(function(id){ return id !== chatId; });
-    }else{
-        pinnedIds.push(chatId);
-    }
-    localStorage.setItem("pinnedChats", JSON.stringify(pinnedIds));
-    renderChats(allChats);
+    const currentUserId = localStorage.getItem("currentUserId");
+    const endpoint = isPinned ? "/api/chat/unpin" : "/api/chat/pin";
+    fetch("http://localhost:8080" + endpoint, {
+        method:  "POST",
+        headers: {"Content-Type": "application/json"},
+        body:    JSON.stringify({userId: currentUserId, chatId: chatId})
+    })
+    .then(function(){ loadAllChats(currentUserId); })
+    .catch(function(){ alert("Could not update pin status."); });
 }
 function toggleArchive(chatId, isArchived){
-    let archivedIds = JSON.parse(localStorage.getItem("archivedChats") || "[]");
-    if(isArchived){
-        archivedIds = archivedIds.filter(function(id){ return id !== chatId; });
-    }else{
-        archivedIds.push(chatId);
-    }
-    localStorage.setItem("archivedChats", JSON.stringify(archivedIds));
-    renderChats(allChats);
+    const currentUserId = localStorage.getItem("currentUserId");
+    const endpoint = isArchived ? "/api/chat/unarchive" : "/api/chat/archive";
+    fetch("http://localhost:8080" + endpoint, {
+        method:  "POST",
+        headers: {"Content-Type": "application/json"},
+        body:    JSON.stringify({userId: currentUserId, chatId: chatId})
+    })
+    .then(function(){ loadAllChats(currentUserId); })
+    .catch(function(){ alert("Could not update archive status."); });
 }
 function formatTime(timestamp){
     if(!timestamp) return "";

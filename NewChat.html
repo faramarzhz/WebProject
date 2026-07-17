@@ -13,6 +13,7 @@
         <span class="new-chat-title">New Chat</span>
     </div>
     <div class="new-chat-body">
+        <!-- شروع چت خصوصی -->
         <div class="settings-section">
             <div class="settings-label">Start a Conversation</div>
             <div class="new-chat-text">Enter the User ID of the person you want to chat with:</div>
@@ -22,6 +23,24 @@
             <button onclick="createNewChat()">Start Chat</button>
         </div>
         <div class="error-msg" id="error-msg"></div>
+
+        <!-- ساخت گروه جدید -->
+        <div class="settings-section">
+            <div class="settings-label">Create a Group</div>
+            <div class="new-chat-text">Enter a name for your new group:</div>
+            <input type="text" id="group-name-input" placeholder="e.g. Project Team">
+        </div>
+        <div class="settings-section">
+            <button onclick="createNewGroup()">Create Group</button>
+        </div>
+        <div class="error-msg" id="group-error-msg"></div>
+
+        <!-- لیست مخاطبین -->
+        <div class="settings-section">
+            <div class="settings-label">Your Contacts</div>
+            <div class="new-chat-text">Tap a contact to start chatting:</div>
+        </div>
+        <div class="chat-list" id="contacts-list" style="max-height:250px; border-radius:8px; overflow-y:auto;"></div>
     </div>
 </div>
 <script src="NewChat.js"></script>

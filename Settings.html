@@ -13,7 +13,6 @@
         <span style="color:white; font-weight:bold; font-size:17px; flex:1;">Settings</span>
     </div>
     <div class="settings-body">
-        <!-- avatar -->
         <div class="settings-avatar-section">
             <div class="settings-avatar" id="settings-avatar">?</div>
             <div class="avatar-btns">
@@ -31,7 +30,6 @@
             <input type="text" id="userid-input" placeholder="Enter new user ID">
             <button onclick="saveUserId()">Save User ID</button>
         </div>
-        <!-- تنظیمات تم -->
         <div class="settings-section">
             <div class="settings-label">Theme</div>
             <div class="toggle-row">
@@ -40,6 +38,13 @@
                     <input type="checkbox" id="dark-toggle" checked onchange="toggleTheme()">
                     <span class="toggle-slider"></span>
                 </label>
+            </div>
+        </div>
+        <!-- مورد ۹: بخش کاربران بلاک‌شده -->
+        <div class="settings-section">
+            <div class="settings-label">Blocked Users</div>
+            <div id="blocked-list-container">
+                <p style="color:#888;font-size:13px;margin-bottom:8px;">Loading...</p>
             </div>
         </div>
         <div class="settings-section">
