@@ -125,4 +125,4 @@ function escapeHtml(text){
     div.textContent = text;
     return div.innerHTML;
 }
-function goBack(){ window.location.href = "Home.html"; }
+function goBack(){ window.location.href ="Home.html"; }
