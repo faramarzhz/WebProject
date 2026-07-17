@@ -126,7 +126,6 @@ async function loadChatInfo(){
         console.error("loadChatInfo error:", error);
     }
 }
-// ━━━ مورد ۸: last seen ━━━
 async function fetchLastSeen(otherUserId){
     try{
         const res = await fetch("http://localhost:8080/api/user/lastseen?userId=" + encodeURIComponent(otherUserId));
@@ -249,7 +248,6 @@ function renderMessages(msgs){
             deleteBtn.onclick     = function(){ deleteMessage(message.id); };
             options.appendChild(editBtn);
             options.appendChild(deleteBtn);
-            // ━━━ مورد ۲: دکمه تاریخچه فقط برای پیام‌های ویرایش/حذف‌شده ━━━
             if(message.isEdited || message.isDeleted){
                 const historyBtn       = document.createElement("button");
                 historyBtn.textContent = "📋";
@@ -267,7 +265,6 @@ function renderMessages(msgs){
         }
         bottomRow.appendChild(options);
         messageDiv.appendChild(bottomRow);
-        // ━━━ مورد ۷: نمایش فایل پیوست ━━━
         if(message.mediaPath){
             const mediaEl = buildMediaElement(message.mediaPath);
             if(mediaEl) messageDiv.appendChild(mediaEl);
@@ -278,7 +275,6 @@ function renderMessages(msgs){
         setTimeout(function(){ container.scrollTop = container.scrollHeight; }, 0);
     }
 }
-// ━━━ مورد ۷: ساخت المان نمایش فایل ━━━
 function buildMediaElement(mediaPath){
     const ext = mediaPath.split(".").pop().toLowerCase();
     if(["jpg","jpeg","png","gif","webp"].includes(ext)){
@@ -288,7 +284,6 @@ function buildMediaElement(mediaPath){
         img.onclick = function(){ window.open(img.src, "_blank"); };
         return img;
     }
-    // سایر فایل‌ها به صورت لینک دانلود
     const link = document.createElement("a");
     link.href      = "http://localhost:8080/uploads/" + mediaPath;
     link.textContent = "📎 " + mediaPath;
@@ -296,7 +291,6 @@ function buildMediaElement(mediaPath){
     link.style.cssText = "display:block;margin-top:6px;color:#00cc55;font-size:13px;";
     return link;
 }
-// ━━━ مورد ۲: نمایش تاریخچه پیام ━━━
 async function showMessageHistory(msgId){
     try{
         const res = await fetch("http://localhost:8080/api/chat/" + chatId + "/message/history?messageId=" + encodeURIComponent(msgId));
@@ -310,7 +304,6 @@ async function showMessageHistory(msgId){
             alert("No edit history available.");
             return;
         }
-        // ساخت modal تاریخچه
         const overlay = document.createElement("div");
         overlay.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:2000;display:flex;justify-content:center;align-items:center;";
         const box = document.createElement("div");
@@ -452,7 +445,6 @@ async function reportMessage(message){
         alert("Error reporting message.");
     }
 }
-// ━━━ مورد ۷: ارسال فایل ━━━
 async function sendFile(file){
     if(!file) return;
     if(file.size > 20 * 1024 * 1024){
@@ -479,7 +471,6 @@ async function sendFile(file){
     }
 }
 document.addEventListener("DOMContentLoaded", function(){
-    // مورد ۷: وصل کردن دکمه 📎 به input فایل که توی HTML هست
     const attachBtn = document.querySelector(".attach-button");
     const fileInput = document.getElementById("file-input");
     if(attachBtn && fileInput){
@@ -629,7 +620,6 @@ function openChatInfo(){
     }
     modal.style.display = "flex";
 }
-// ━━━ مورد ۱: archive از API ━━━
 async function archiveChat(){
     if(!currentChatGlobal) return;
     const isArchived = currentChatGlobal.isArchived;
@@ -650,7 +640,6 @@ async function archiveChat(){
         alert("Error connecting to server.");
     }
 }
-// ━━━ مورد ۱: mute از API ━━━
 async function toggleMute(){
     if(!currentChatGlobal) return;
     const isMuted  = currentChatGlobal.isMuted;
