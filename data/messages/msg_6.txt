@@ -1,3 +1,0 @@
-7|faramarz|x|1784241978963|false|false|false
-8|faramarz|ظ|1784241980545|false|false|false
-9|fire|qp|1784242021753|false|false|false
