@@ -253,7 +253,7 @@ function searchChats(){
 }
 function openChat(chatId, chatType){
     const chat = allChats.find(function(c){ return c.id === chatId; });
-    if(chat) localStorage.setItem("lastSeen_" + chatId, String(chat.totalMessages ||0));
+    if(chat) localStorage.setItem("lastSeen_" + chatId, String(chat.totalMessages || 0));
     window.location.href = "Chat.html?id=" + encodeURIComponent(chatId) + "&type=" + (chatType || "private");
 }
 function goSettings(){
