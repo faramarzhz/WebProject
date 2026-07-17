@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Chat - WebChat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="home-body">
+<div class="home-wrapper">
+    <div class="home-header">
+        <button class="back-btn" onclick="goBack()">&#8592;</button>
+        <span class="new-chat-title">New Chat</span>
+    </div>
+    <div class="new-chat-body">
+        <!-- شروع چت خصوصی -->
+        <div class="settings-section">
+            <div class="settings-label">Start a Conversation</div>
+            <div class="new-chat-text">Enter the User ID of the person you want to chat with:</div>
+            <input type="text" id="target-userid-input" placeholder="e.g. faramarz_h">
+        </div>
+        <div class="settings-section">
+            <button onclick="createNewChat()">Start Chat</button>
+        </div>
+        <div class="error-msg" id="error-msg"></div>
+
+        <!-- ساخت گروه جدید -->
+        <div class="settings-section">
+            <div class="settings-label">Create a Group</div>
+            <div class="new-chat-text">Enter a name for your new group:</div>
+            <input type="text" id="group-name-input" placeholder="e.g. Project Team">
+        </div>
+        <div class="settings-section">
+            <button onclick="createNewGroup()">Create Group</button>
+        </div>
+        <div class="error-msg" id="group-error-msg"></div>
+
+        <!-- لیست مخاطبین -->
+        <div class="settings-section">
+            <div class="settings-label">Your Contacts</div>
+            <div class="new-chat-text">Tap a contact to start chatting:</div>
+        </div>
+        <div class="chat-list" id="contacts-list" style="max-height:250px; border-radius:8px; overflow-y:auto;"></div>
+    </div>
+</div>
+<script src="NewChat.js"></script>
+</body>
+</html>
