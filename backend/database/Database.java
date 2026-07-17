@@ -28,7 +28,6 @@ public class Database {
         }
         return result;
     }
-
     private static void addAllToSet(HashSet<String> s, String text) {
         if (text.equals("none"))
             return;
@@ -47,10 +46,8 @@ public class Database {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Could not save users file");
         }
     }
-
     public static HashMap<String, User> loadUsers() {
         HashMap<String, User> users = new HashMap<>();
         File file = new File(user);
@@ -64,7 +61,6 @@ public class Database {
                     users.put(user.getUserId(), user);
             }
         } catch (IOException e) {
-            System.err.println("Could not read users file");
         }
         return users;
     }
@@ -72,15 +68,14 @@ public class Database {
     private static String userToLine(User user) {
         String contact = setToText(user.getContacts());
         String block = setToText(user.getBlockUser());
-        String pin = setToText(user.getPinChat());
+        String pinn = setToText(user.getPinChat());
         String archiv = setToText(user.getArchiveChat());
         String mute = setToText(user.getMuteChat());
         return user.getUserId() + "|" + user.getUsername() + "|" + user.getPassword() + "|" +
                 user.getProfilePath() + "|" + user.isBlocked() + "|" +
                 user.getFailLogin() + "|" + user.getBlockUntil() + "|" +
-                contact + "|" + block + "|" + pin + "|" + archiv + "|" + mute;
+                contact + "|" + block + "|" + pinn + "|" + archiv + "|" + mute;
     }
-
     private static User lineToUser(String line) {
         String[] parts = line.split("\\|");
         String userId = parts[0];
@@ -89,12 +84,12 @@ public class Database {
         String pic = parts[3];
         boolean isBlocked = Boolean.parseBoolean(parts[4]);
         int failLogin = Integer.parseInt(parts[5]);
-        long blockTime = Long.parseLong(parts[6]);
+        long blokTime = Long.parseLong(parts[6]);
         User user = new User(username, password, userId);
         user.setProfilePath(pic);
         user.setBlocked(isBlocked);
         user.setFailLogin(failLogin);
-        user.setBlockUntil(blockTime);
+        user.setBlockUntil(blokTime);
         addAllToSet(user.getContacts(), parts[7]);
         addAllToSet(user.getBlockUser(), parts[8]);
         addAllToSet(user.getPinChat(), parts[9]);
@@ -112,10 +107,8 @@ public class Database {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Could not save groups file");
         }
     }
-
     public static HashMap<String, Group> loadGroups() {
         HashMap<String, Group> groups = new HashMap<>();
         File file = new File(group);
@@ -129,19 +122,17 @@ public class Database {
                     groups.put(group.getGroupId(), group);
             }
         } catch (IOException e) {
-            System.err.println("Could not read groups file");
         }
         return groups;
     }
 
-    private static String groupToLine(Group group) {
-        String members = setToText(group.getMembers());
-        String admins = setToText(group.getAdminIds());
-        return group.getGroupId() + "|" + group.getName() + "|" +
-                group.getProfilePath() + "|" + group.getCreatorId() + "|" +
+    private static String groupToLine(Group grop) {
+        String members = setToText(grop.getMembers());
+        String admins = setToText(grop.getAdminIds());
+        return grop.getGroupId() + "|" + grop.getName() + "|" +
+                grop.getProfilePath() + "|" + grop.getCreatorId() + "|" +
                 members + "|" + admins;
     }
-
     private static Group lineToGroup(String line) {
         String[] parts = line.split("\\|");
         String groupId = parts[0];
@@ -164,10 +155,8 @@ public class Database {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Could not save messages file");
         }
     }
-
     public static ArrayList<Message> loadMessages(String id) {
         ArrayList<Message> messages = new ArrayList<>();
         File file = new File(message + "msg_" + id + ".txt");
@@ -181,7 +170,6 @@ public class Database {
                     messages.add(message);
             }
         } catch (IOException e) {
-            System.err.println("Could not read messages file");
         }
         return messages;
     }
@@ -192,27 +180,26 @@ public class Database {
                 encryptedContent + "|" + message.getTimestamp() + "|" +
                 message.isEdited() + "|" + message.isDeleted() + "|" + message.isReported();
     }
-
     private static Message lineToMessage(String line) {
         String[] parts = line.split("\\|");
         String messageId = parts[0];
         String senderId = parts[1];
         String content = MessageEncryptor.decrypt(parts[2]);
-        long timestamp = Long.parseLong(parts[3]);
-        boolean isEdited = false;
-        boolean isDeleted = false;
-        boolean isReported = false;
+        long time = Long.parseLong(parts[3]);
+        boolean edit = false;
+        boolean delet = false;
+        boolean report = false;
         if (parts[4].equals("true"))
-            isEdited = true;
+            edit = true;
         if (parts[5].equals("true"))
-            isDeleted = true;
+            delet = true;
         if (parts[6].equals("true"))
-            isReported = true;
+            report = true;
         Message message = new Message(messageId, senderId, content, null);
-        message.setTimestamp(timestamp);
-        message.setEdited(isEdited);
-        message.setDeleted(isDeleted);
-        message.setReported(isReported);
+        message.setTimestamp(time);
+        message.setEdited(edit);
+        message.setDeleted(delet);
+        message.setReported(report);
         return message;
     }
 
@@ -225,10 +212,8 @@ public class Database {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Could not save chats file");
         }
     }
-
     public static HashMap<String, Chat> loadChats() {
         HashMap<String, Chat> chats = new HashMap<>();
         File file = new File(chat);
@@ -242,29 +227,27 @@ public class Database {
                     chats.put(chat.getChatId(), chat);
             }
         } catch (IOException e) {
-            System.err.println("Could not read chats file");
         }
         return chats;
     }
 
     private static String chatToLine(Chat chat) {
         ArrayList<String> parts = chat.getUsers();
-        String participants = "";
+        String participets = "";
         for (int i = 0; i < parts.size(); i++) {
             if (i > 0)
-                participants += ",";
-            participants += parts.get(i);
+                participets += ",";
+            participets += parts.get(i);
         }
-        return chat.getChatId() + "|" + chat.getType() + "|" + chat.getName() + "|" + participants;
+        return chat.getChatId() + "|" + chat.getType() + "|" + chat.getName() + "|" + participets;
     }
-
     private static Chat lineToChat(String line) {
         String[] parts = line.split("\\|");
         String chatId = parts[0];
         String type = parts[1];
         String name = parts[2];
-        String[] participants = parts[3].split(",");
-        Chat chat = new Chat(chatId, participants[0], participants[1]);
+        String[] participets = parts[3].split(",");
+        Chat chat = new Chat(chatId, participets[0], participets[1]);
         chat.setType(type);
         chat.setName(name);
         return chat;
